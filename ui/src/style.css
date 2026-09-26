@@ -567,10 +567,42 @@ body {
   color: #9bb4c2;
 }
 
+.replay-bar__speed {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.replay-bar__speed-btn.btn--primary {
+  box-shadow: 0 0 0 1px rgba(106, 160, 188, 0.35);
+}
+
 .replay-bar__actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
   margin-left: auto;
+}
+
+.replay-bar__hint {
+  position: absolute;
+  left: 50%;
+  top: calc(1rem + 3.5rem);
+  transform: translateX(-50%);
+  z-index: 5;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--hud-muted);
+  pointer-events: none;
+}
+
+.replay-bar__hint kbd {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  border: 1px solid rgba(106, 160, 188, 0.25);
+  background: rgba(8, 20, 28, 0.6);
 }
 
 .conditions__row--sog .conditions__swatch,
@@ -789,9 +821,9 @@ body {
 
 .conditions__row {
   display: grid;
-  grid-template-columns: 0.5rem auto 1fr;
+  grid-template-columns: 0.5rem auto minmax(0, 1fr);
   gap: 0.45rem;
-  align-items: baseline;
+  align-items: center;
   font-size: 0.8rem;
   line-height: 1.3;
   padding: 0.12rem 0.15rem;
@@ -833,6 +865,13 @@ body {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+  white-space: nowrap;
+  justify-self: end;
+}
+
+.conditions--env .conditions__list {
+  /* Room for "calm @ 180°" beside the compass rose without wrapping. */
+  min-width: 7.5rem;
 }
 
 .conditions__note {

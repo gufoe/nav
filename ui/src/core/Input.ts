@@ -19,6 +19,7 @@ export type Action =
   | "simSpeed1"
   | "simSpeed2"
   | "simSpeed3"
+  | "simSpeed4"
 
 /** Human-readable rows for the in-app help overlay (derived from BINDINGS). */
 export type HelpEntry = { keys: string; description: string }
@@ -49,9 +50,11 @@ const KEY_LABELS: Record<string, string> = {
   Digit1: "1",
   Digit2: "2",
   Digit3: "3",
+  Digit4: "4",
   Numpad1: "1",
   Numpad2: "2",
   Numpad3: "3",
+  Numpad4: "4",
 }
 
 /** Display label for a bound key code (tests / tooling). */
@@ -79,6 +82,7 @@ const BINDINGS: Record<Action, readonly string[]> = {
   simSpeed1: ["Digit1", "Numpad1"],
   simSpeed2: ["Digit2", "Numpad2"],
   simSpeed3: ["Digit3", "Numpad3"],
+  simSpeed4: ["Digit4", "Numpad4"],
 }
 
 /** Descriptions only — key labels come from BINDINGS. */
@@ -236,4 +240,4 @@ export function formatActionKeys(action: Action): string {
 }
 
 /** Actions bound in-game but omitted from the help panel. */
-export const HELP_OMITTED_ACTIONS: readonly Action[] = ["confirm"]
+export const HELP_OMITTED_ACTIONS: readonly Action[] = ["confirm", "simSpeed4"]

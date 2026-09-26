@@ -18,6 +18,15 @@ import { WakeTrail } from "../sim/WakeTrail.ts"
 import { resolveCheckpoints } from "../sim/checkpoints.ts"
 import { MenuScene } from "./MenuScene.ts"
 import { formatRunTimeMs } from "../util/formatTime.ts"
+import { PHYSICS_DT } from "../physics/fluids/constants.ts"
+import {
+  DEFAULT_REPLAY_SPEED,
+  formatReplaySpeed,
+  isReplaySpeed,
+  REPLAY_SPEED_OPTIONS,
+  replaySpeedFromHotkeyIndex,
+  type ReplaySpeed,
+} from "../sim/replaySpeed.ts"
 
 const WAKE_MAX_AGE_S = 90
 
@@ -48,6 +57,9 @@ export class ReplayScene implements Scene {
   private frameIndex = 0
   private paused = false
   private finished = false
+  private replaySpeed: ReplaySpeed = DEFAULT_REPLAY_SPEED
+  private previousFixedDt = 1 / 60
+  private previousTimeScale = 1
 
   constructor(game: Game, replay: ReplayPayload, options: ReplaySceneOptions = {}) {
     this.game = game
@@ -70,24 +82,38 @@ export class ReplayScene implements Scene {
   }
 
   enter(ctx: FrameContext): void {
+    this.previousFixedDt = this.game.time.fixedDt
+    this.previousTimeScale = this.game.time.scale
+    this.game.time.fixedDt = PHYSICS_DT
+    this.replaySpeed = DEFAULT_REPLAY_SPEED
+    this.applyReplaySpeed()
+
     this.renderer = new CanvasRenderer(ctx.ctx)
     this.envViz = new EnvironmentViz(ctx.ctx)
-    this.frameIndex = 0
-    this.finished = this.replay.frames.length === 0
+    this.restartPlayback()
     this.paused = false
 
     const hud = document.createElement("div")
     hud.className = "hud-root replay-hud"
     const title = this.options.title ?? "Replay"
+    const speedButtons = REPLAY_SPEED_OPTIONS.map(
+      (speed) =>
+        `<button class="btn btn--small replay-bar__speed-btn" type="button" data-speed="${speed}">${formatReplaySpeed(speed)}</button>`,
+    ).join("")
     hud.innerHTML = `
       <div class="replay-bar" role="status">
         <p class="replay-bar__title">${title}</p>
         <p class="replay-bar__meta" data-field="replay-meta"></p>
+        <div class="replay-bar__speed" role="group" aria-label="Playback speed">
+          ${speedButtons}
+        </div>
         <div class="replay-bar__actions">
           <button class="btn" type="button" data-action="replay-toggle">Pause</button>
+          <button class="btn" type="button" data-action="replay-restart">Restart</button>
           <button class="btn btn--primary" type="button" data-action="replay-back">Back</button>
         </div>
       </div>
+      <p class="replay-bar__hint"><kbd>1</kbd>–<kbd>4</kbd> speed · <kbd>P</kbd> pause · <kbd>R</kbd> restart</p>
     `
     hud.querySelector<HTMLButtonElement>("[data-action='replay-toggle']")?.addEventListener(
       "click",
@@ -100,6 +126,20 @@ export class ReplayScene implements Scene {
       "click",
       () => this.goBack(),
     )
+    hud.querySelector<HTMLButtonElement>("[data-action='replay-restart']")?.addEventListener(
+      "click",
+      () => {
+        this.restartPlayback()
+        this.paused = false
+        this.refreshHud()
+      },
+    )
+    hud.querySelectorAll<HTMLButtonElement>("[data-speed]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const speed = Number(btn.dataset.speed)
+        if (isReplaySpeed(speed)) this.setReplaySpeed(speed)
+      })
+    })
 
     this.game.uiRoot.appendChild(hud)
     this.hud = hud
@@ -108,6 +148,8 @@ export class ReplayScene implements Scene {
   }
 
   exit(): void {
+    this.game.time.fixedDt = this.previousFixedDt
+    this.game.time.scale = this.previousTimeScale
     this.hud?.remove()
     this.hud = null
     this.renderer = null
@@ -121,6 +163,22 @@ export class ReplayScene implements Scene {
     }
     if (ctx.input.wasActionPressed("pause")) {
       this.paused = !this.paused
+    }
+    if (ctx.input.wasActionPressed("reset")) {
+      this.restartPlayback()
+      this.paused = false
+    }
+    if (ctx.input.wasActionPressed("simSpeed1")) {
+      this.setReplaySpeed(replaySpeedFromHotkeyIndex(0) ?? DEFAULT_REPLAY_SPEED)
+    }
+    if (ctx.input.wasActionPressed("simSpeed2")) {
+      this.setReplaySpeed(replaySpeedFromHotkeyIndex(1) ?? DEFAULT_REPLAY_SPEED)
+    }
+    if (ctx.input.wasActionPressed("simSpeed3")) {
+      this.setReplaySpeed(replaySpeedFromHotkeyIndex(2) ?? DEFAULT_REPLAY_SPEED)
+    }
+    if (ctx.input.wasActionPressed("simSpeed4")) {
+      this.setReplaySpeed(replaySpeedFromHotkeyIndex(3) ?? DEFAULT_REPLAY_SPEED)
     }
     this.refreshHud()
   }
@@ -247,17 +305,42 @@ export class ReplayScene implements Scene {
     this.envViz?.setPixelsPerMeter(this.dockCamera.pixelsPerMeter)
   }
 
+  private restartPlayback(): void {
+    this.frameIndex = 0
+    this.finished = this.replay.frames.length === 0
+    this.boat = cloneBoatState(this.scenario!.boat)
+    this.wake.reset()
+    this.forces = this.dynamics.computeForces(
+      this.boat,
+      createControls(),
+      environmentFromScenario(this.scenario!.environment),
+    )
+  }
+
+  private setReplaySpeed(speed: ReplaySpeed): void {
+    this.replaySpeed = speed
+    this.applyReplaySpeed()
+    this.refreshHud()
+  }
+
+  private applyReplaySpeed(): void {
+    this.game.time.scale = this.replaySpeed
+  }
+
   private refreshHud(): void {
     if (!this.hud) return
     const meta = this.hud.querySelector<HTMLElement>('[data-field="replay-meta"]')
     const toggle = this.hud.querySelector<HTMLButtonElement>("[data-action='replay-toggle']")
-    const progressMs =
-      this.frameIndex * this.replay.fixedDt * 1000
+    const progressMs = this.frameIndex * this.replay.fixedDt * 1000
     if (meta) {
-      meta.textContent = `${formatRunTimeMs(progressMs)} / ${formatRunTimeMs(this.replay.timeMs)} · frame ${this.frameIndex}/${this.replay.frames.length}${this.finished ? " · end" : ""}`
+      meta.textContent = `${formatRunTimeMs(progressMs)} / ${formatRunTimeMs(this.replay.timeMs)} · ${formatReplaySpeed(this.replaySpeed)}${this.finished ? " · end" : ""}`
     }
     if (toggle) {
       toggle.textContent = this.paused || this.finished ? "Play" : "Pause"
     }
+    this.hud.querySelectorAll<HTMLButtonElement>("[data-speed]").forEach((btn) => {
+      const speed = Number(btn.dataset.speed)
+      btn.classList.toggle("btn--primary", speed === this.replaySpeed)
+    })
   }
 }

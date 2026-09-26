@@ -618,7 +618,7 @@ export class SimScene implements Scene {
     )
     set(
       "apparent",
-      `${formatKnots(this.forces.apparentWind.speed)} @ ${Math.abs(
+      `${formatKnots(this.forces.apparentWind.speed)}\u202f@\u202f${Math.abs(
         radToDeg(this.forces.apparentWind.angleFromBow),
       ).toFixed(0)}°`,
     )
