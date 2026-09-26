@@ -6,14 +6,11 @@ import {
   windFlowFrom,
 } from "../sim/WorldFlow.ts"
 import { clamp } from "../math/MathUtil.ts"
-import {
-  swellCrestAlong,
-  swellPhaseTimeFromTravel,
-  swellWavelength,
-} from "./environmentField.ts"
+import { swellWavelength } from "./environmentField.ts"
 import { drawFlowArrow } from "./flowArrow.ts"
 import { forEachFlowMarker, viewExtents } from "./flowMarkers.ts"
-import { flowAlignedReach } from "./worldViewBounds.ts"
+import { drawSwellLayer, swellAxesFromFlow } from "./swellViz.ts"
+import { visibleWorldBounds } from "./worldViewBounds.ts"
 import { WindViz } from "./WindViz.ts"
 
 /**
@@ -82,93 +79,37 @@ export class EnvironmentViz {
     const period = Math.max(1.5, env.wavePeriod)
     const wavelength = swellWavelength(period)
     const amp = clamp(height * 0.35, 0.05, 0.55)
-    const baseOpacity = clamp(0.05 + height * 0.1, 0.05, 0.16)
+    const baseOpacity = clamp(0.08 + height * 0.14, 0.08, 0.22)
     // Real swell celerity is several m/s — slow the visual so crests read as drift, not streaks.
     const visualTravel = t * Math.min(flow.speed * 0.08, 0.45)
 
-    this.drawWaveSwellLayer(
-      ctx,
-      flow,
-      visualTravel,
-      period,
-      wavelength,
-      amp,
-      baseOpacity,
-      height,
-    )
-  }
-
-  /**
-   * Swell crests run across the propagation direction and advance down-wave.
-   */
-  private drawWaveSwellLayer(
-    ctx: FrameContext,
-    flow: { vx: number; vy: number; speed: number; headingTo: number },
-    travel: number,
-    period: number,
-    wavelength: number,
-    amp: number,
-    opacity: number,
-    height: number,
-  ): void {
-    const c = this.ctx
     const view = this.viewExtents(ctx)
-    const ux = flow.vx / flow.speed
-    const uy = flow.vy / flow.speed
-    const px = -uy
-    const py = ux
-
-    const k = (Math.PI * 2) / wavelength
-    const omega = (Math.PI * 2) / period
-    const { crossReach, alongMin, alongMax } = flowAlignedReach(
-      {
-        minX: view.worldCenterX - view.halfW,
-        maxX: view.worldCenterX + view.halfW,
-        minY: view.worldCenterY - view.halfH,
-        maxY: view.worldCenterY + view.halfH,
-      },
-      ux,
-      uy,
+    const sx = this.screenCenterX ?? ctx.width / 2
+    const sy = this.screenCenterY ?? ctx.height / 2
+    const bounds = visibleWorldBounds(
+      ctx.width,
+      ctx.height,
+      this.pixelsPerMeter,
+      view.worldCenterX,
+      view.worldCenterY,
+      sx,
+      sy,
     )
-    const reach = crossReach + wavelength + amp
-    const iMin = Math.floor((alongMin - travel) / wavelength) - 2
-    const iMax = Math.ceil((alongMax - travel) / wavelength) + 2
-    const phase = omega * swellPhaseTimeFromTravel(travel, flow.speed)
 
-    const lineW = (0.75 + height * 0.4) / this.pixelsPerMeter
-    const samples = 32
-
-    c.save()
-    c.lineCap = "round"
-    c.lineJoin = "round"
-
-    for (let i = iMin; i <= iMax; i++) {
-      const along0 = swellCrestAlong(i, wavelength, travel)
-      const crestPhase = i * 0.85
-      const pts: { x: number; y: number }[] = []
-
-      for (let s = 0; s <= samples; s++) {
-        const cross = -reach + (s / samples) * reach * 2
-        const meander =
-          Math.sin(k * cross * 0.55 + crestPhase + phase * 0.35) * amp * 0.5
-        const along = along0 + meander
-        const x = ux * along + px * cross
-        const y = uy * along + py * cross
-        pts.push({ x, y })
-      }
-
-      c.beginPath()
-      for (let s = 0; s < pts.length; s++) {
-        const p = pts[s]!
-        if (s === 0) c.moveTo(p.x, p.y)
-        else c.lineTo(p.x, p.y)
-      }
-      c.strokeStyle = `rgba(150, 195, 215, ${opacity})`
-      c.lineWidth = lineW
-      c.stroke()
-    }
-
-    c.restore()
+    drawSwellLayer(this.ctx, {
+      bounds,
+      worldCenterX: view.worldCenterX,
+      worldCenterY: view.worldCenterY,
+      axes: swellAxesFromFlow(flow.vx, flow.vy, flow.speed),
+      travel: visualTravel,
+      wavelength,
+      period,
+      flowSpeed: flow.speed,
+      amp,
+      height,
+      baseOpacity,
+      pixelsPerMeter: this.pixelsPerMeter,
+    })
   }
 
   private drawCurrent(ctx: FrameContext, env: Environment, t: number): void {
