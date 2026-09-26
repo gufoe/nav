@@ -31,6 +31,14 @@ import {
   type ParkingCheckpoint,
 } from "../sim/checkpoints.ts"
 import { describeHoldSpeedLimit } from "../sim/parkingHold.ts"
+import { GameplayRecorder } from "../recording/GameplayRecorder.ts"
+import {
+  readRememberedPlayerName,
+  rememberPlayerName,
+} from "../recording/playerName.ts"
+import { submitScore } from "../api/scores.ts"
+import { formatRunTimeMs } from "../util/formatTime.ts"
+import type { ReplayPayload } from "../../../shared/replay.ts"
 
 const WAKE_MAX_AGE_S = 90
 
@@ -60,6 +68,11 @@ export class SimScene implements Scene {
   private readonly wake = new WakeTrail(500, 0.75, WAKE_MAX_AGE_S)
   private readonly checkpoints: readonly ParkingCheckpoint[]
   private readonly checkpointProgress: CheckpointProgress
+  private readonly recorder: GameplayRecorder
+  private pendingReplay: ReplayPayload | null = null
+  private scoreSubmitting = false
+  private scoreSaved = false
+  private scoreError: string | null = null
 
   constructor(game: Game, scenario: Scenario) {
     this.game = game
@@ -74,6 +87,10 @@ export class SimScene implements Scene {
     )
     this.checkpoints = resolveCheckpoints(scenario)
     this.checkpointProgress = new CheckpointProgress(this.checkpoints)
+    this.recorder = new GameplayRecorder(
+      scenario.id,
+      getSelectedBoatId() ?? scenario.boatId ?? this.boatSpec.id,
+    )
   }
 
   enter(ctx: FrameContext): void {
@@ -279,12 +296,22 @@ export class SimScene implements Scene {
           <div class="instrument-table" data-field="forces-prop"></div>
         </aside>
       </div>
-      <div class="level-pass hidden" data-field="level-pass" role="status">
-        <p class="level-pass__title">Level passed</p>
-        <p class="level-pass__detail">All three holds complete — well done.</p>
-        <button class="btn btn--primary level-pass__btn" type="button" data-action="level-menu">
-          Back to scenarios
-        </button>
+      <div class="level-pass hidden" data-field="level-pass" role="dialog" aria-labelledby="level-pass-title">
+        <p class="level-pass__title" id="level-pass-title">Level passed</p>
+        <p class="level-pass__detail" data-field="level-pass-detail">All holds complete — well done.</p>
+        <p class="level-pass__time" data-field="level-pass-time"></p>
+        <label class="level-pass__name">
+          <span>Enter the name you want to be remembered with</span>
+          <input type="text" maxlength="64" autocomplete="nickname" data-field="player-name" />
+        </label>
+        <p class="level-pass__error hidden" data-field="score-error"></p>
+        <p class="level-pass__saved hidden" data-field="score-saved">Score saved — check the scoreboard.</p>
+        <div class="level-pass__actions">
+          <button class="btn btn--primary" type="button" data-action="save-score">Save score</button>
+          <button class="btn level-pass__btn" type="button" data-action="level-menu">
+            Back to scenarios
+          </button>
+        </div>
       </div>
       <footer class="hud-bar conditions__note conditions__note--keys" aria-label="Keyboard shortcuts">
         <kbd>W</kbd><kbd>S</kbd> throttle · <kbd>X</kbd> neutral · <kbd>M</kbd> engine ·
@@ -301,6 +328,12 @@ export class SimScene implements Scene {
       "click",
       () => {
         this.game.setScene(new MenuScene(this.game))
+      },
+    )
+    hud.querySelector<HTMLButtonElement>("[data-action='save-score']")?.addEventListener(
+      "click",
+      () => {
+        void this.saveScore()
       },
     )
 
@@ -378,12 +411,18 @@ export class SimScene implements Scene {
     this.boat = result.state
     this.forces = result.forces
 
-    this.checkpointProgress.tick(
+    const tickResult = this.checkpointProgress.tick(
       ctx.time.fixedDt,
       this.boat,
       result.forces.groundVelocity.x,
       result.forces.groundVelocity.y,
     )
+    if (tickResult.levelJustPassed) {
+      this.pendingReplay = this.recorder.finish()
+      this.paused = true
+    } else if (!this.checkpointProgress.isComplete) {
+      this.recorder.recordStep(ctx.time.fixedDt, this.helm.controls)
+    }
 
     const env = environmentFromScenario(this.scenario.environment)
     const spec = this.dynamics.boat
@@ -483,6 +522,11 @@ export class SimScene implements Scene {
     this.helm.reset()
     this.wake.reset()
     this.checkpointProgress.reset()
+    this.recorder.reset()
+    this.pendingReplay = null
+    this.scoreSubmitting = false
+    this.scoreSaved = false
+    this.scoreError = null
     this.dockCameraSnapPending = true
   }
 
@@ -662,7 +706,11 @@ export class SimScene implements Scene {
     const passEl = this.hud.querySelector<HTMLElement>('[data-field="level-pass"]')
 
     if (passEl) {
-      passEl.classList.toggle("hidden", cp.phase !== "complete")
+      const showPass = cp.phase === "complete"
+      passEl.classList.toggle("hidden", !showPass)
+      if (showPass) {
+        this.refreshLevelPassOverlay()
+      }
     }
 
     if (!checkpointEl || !meterEl || !fillEl) return
@@ -700,6 +748,64 @@ export class SimScene implements Scene {
       checkpointEl.textContent = `${holdNum}/${total} · ${title} — ${verb} (${pct}%)`
     } else {
       checkpointEl.textContent = `${holdNum}/${total} · ${title} — ${detail} (${speedHint})`
+    }
+  }
+
+  private refreshLevelPassOverlay(): void {
+    if (!this.hud) return
+    const nameInput = this.hud.querySelector<HTMLInputElement>('[data-field="player-name"]')
+    if (nameInput && !nameInput.dataset.prefilled) {
+      nameInput.value = readRememberedPlayerName()
+      nameInput.dataset.prefilled = "1"
+    }
+    const timeEl = this.hud.querySelector<HTMLElement>('[data-field="level-pass-time"]')
+    const replay = this.pendingReplay
+    if (timeEl && replay) {
+      timeEl.textContent = `Time: ${formatRunTimeMs(replay.timeMs)}`
+    }
+    const errEl = this.hud.querySelector<HTMLElement>('[data-field="score-error"]')
+    const savedEl = this.hud.querySelector<HTMLElement>('[data-field="score-saved"]')
+    const saveBtn = this.hud.querySelector<HTMLButtonElement>("[data-action='save-score']")
+    if (errEl) {
+      errEl.textContent = this.scoreError ?? ""
+      errEl.classList.toggle("hidden", !this.scoreError)
+    }
+    if (savedEl) {
+      savedEl.classList.toggle("hidden", !this.scoreSaved)
+    }
+    if (saveBtn) {
+      saveBtn.disabled = this.scoreSubmitting || this.scoreSaved || !replay
+      saveBtn.textContent = this.scoreSubmitting ? "Saving…" : "Save score"
+    }
+  }
+
+  private async saveScore(): Promise<void> {
+    if (this.scoreSubmitting || this.scoreSaved || !this.pendingReplay || !this.hud) return
+    const nameInput = this.hud.querySelector<HTMLInputElement>('[data-field="player-name"]')
+    const playerName = nameInput?.value.trim() ?? ""
+    if (!playerName) {
+      this.scoreError = "Enter a name to save your run."
+      this.refreshLevelPassOverlay()
+      return
+    }
+    this.scoreSubmitting = true
+    this.scoreError = null
+    this.refreshLevelPassOverlay()
+    try {
+      await submitScore({
+        levelId: this.scenario.id,
+        playerName,
+        timeMs: this.pendingReplay.timeMs,
+        boatId: this.pendingReplay.boatId,
+        replay: this.pendingReplay,
+      })
+      rememberPlayerName(playerName)
+      this.scoreSaved = true
+    } catch (err) {
+      this.scoreError = err instanceof Error ? err.message : "Could not save score"
+    } finally {
+      this.scoreSubmitting = false
+      this.refreshLevelPassOverlay()
     }
   }
 

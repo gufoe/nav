@@ -5,6 +5,7 @@ import { SCENARIOS } from "../sim/scenarios.ts"
 import { getSelectedBoatId } from "../core/settings.ts"
 import { boatById } from "../physics/boats/index.ts"
 import { SettingsOverlay } from "../ui/SettingsOverlay.ts"
+import { ScoreboardScene } from "./ScoreboardScene.ts"
 
 export class MenuScene implements Scene {
   readonly id = "menu"
@@ -43,6 +44,9 @@ export class MenuScene implements Scene {
             >${scenario.name}</button>
           `,
         ).join("")}
+        <button class="btn" data-action="scoreboard" type="button">
+          Scoreboard
+        </button>
         <button class="btn" data-action="settings" type="button">
           Settings
         </button>
@@ -55,6 +59,13 @@ export class MenuScene implements Scene {
     root.querySelector<HTMLButtonElement>("[data-action='help']")?.addEventListener("click", () => {
       this.game.toggleHelp()
     })
+
+    root.querySelector<HTMLButtonElement>("[data-action='scoreboard']")?.addEventListener(
+      "click",
+      () => {
+        this.game.setScene(new ScoreboardScene(this.game))
+      },
+    )
 
     root.querySelector<HTMLButtonElement>("[data-action='settings']")?.addEventListener("click", () => {
       this.settings?.show()

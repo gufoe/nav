@@ -1,0 +1,20 @@
+{
+  "name": "nav-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "node --test \"src/**/__tests__/**/*.test.ts\"",
+    "test:unit": "node --test \"src/math/__tests__/**/*.test.ts\" \"src/sim/__tests__/**/*.test.ts\" \"src/render/__tests__/**/*.test.ts\" \"src/ui/__tests__/**/*.test.ts\" \"src/core/__tests__/**/*.test.ts\" \"src/physics/__tests__/conventions.test.ts\" \"src/physics/__tests__/fluids.test.ts\" \"src/physics/__tests__/integrator.test.ts\" \"src/physics/__tests__/telemetry.test.ts\"",
+    "test:physics": "node --test \"src/physics/__tests__/maneuvers.test.ts\" \"src/physics/__tests__/sails.test.ts\"",
+    "physics:report": "node scripts/physics-report.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}

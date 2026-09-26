@@ -3,18 +3,21 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "ui",
+    "backend"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "node --test \"src/**/__tests__/**/*.test.ts\"",
-    "test:unit": "node --test \"src/math/__tests__/**/*.test.ts\" \"src/sim/__tests__/**/*.test.ts\" \"src/render/__tests__/**/*.test.ts\" \"src/ui/__tests__/**/*.test.ts\" \"src/core/__tests__/**/*.test.ts\" \"src/physics/__tests__/conventions.test.ts\" \"src/physics/__tests__/fluids.test.ts\" \"src/physics/__tests__/integrator.test.ts\" \"src/physics/__tests__/telemetry.test.ts\"",
-    "test:physics": "node --test \"src/physics/__tests__/maneuvers.test.ts\" \"src/physics/__tests__/sails.test.ts\"",
-    "physics:report": "node scripts/physics-report.ts"
+    "dev": "concurrently -n ui,api -c cyan,magenta \"npm run dev -w nav-ui\" \"npm run dev -w nav-backend\"",
+    "dev:ui": "npm run dev -w nav-ui",
+    "dev:backend": "npm run dev -w nav-backend",
+    "build": "npm run build -w nav-ui",
+    "test": "npm run test -w nav-ui",
+    "test:unit": "npm run test:unit -w nav-ui",
+    "test:physics": "npm run test:physics -w nav-ui",
+    "physics:report": "npm run physics:report -w nav-ui"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
-    "typescript": "~6.0.2",
-    "vite": "^8.3.0"
+    "concurrently": "^9.2.1"
   }
 }

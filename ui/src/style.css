@@ -431,8 +431,139 @@ body {
   margin-bottom: 1rem;
 }
 
+.level-pass__time {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.05rem;
+  color: #e8f1f5;
+  margin-bottom: 0.85rem;
+}
+
+.level-pass__name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #9bb4c2;
+  margin-bottom: 0.75rem;
+}
+
+.level-pass__name input {
+  font: inherit;
+  padding: 0.45rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid rgba(130, 180, 210, 0.35);
+  background: rgba(6, 16, 24, 0.85);
+  color: #e8f1f5;
+}
+
+.level-pass__error {
+  color: #f5a8a8;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.level-pass__saved {
+  color: #b8f5d4;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.level-pass__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .level-pass__btn {
   width: 100%;
+}
+
+.scoreboard__level {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #9bb4c2;
+}
+
+.scoreboard__level select {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(130, 180, 210, 0.35);
+  background: rgba(6, 16, 24, 0.85);
+  color: #e8f1f5;
+}
+
+.scoreboard__status {
+  color: #9bb4c2;
+  margin-bottom: 0.75rem;
+}
+
+.scoreboard__table-wrap {
+  width: 100%;
+  max-width: 36rem;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+}
+
+.scoreboard__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.scoreboard__table th,
+.scoreboard__table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid rgba(130, 180, 210, 0.15);
+  text-align: left;
+}
+
+.scoreboard__table th:last-child,
+.scoreboard__table td:last-child {
+  text-align: right;
+}
+
+.btn--small {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.replay-hud .replay-bar {
+  position: absolute;
+  left: 50%;
+  top: 1rem;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  border: 1px solid rgba(130, 180, 210, 0.25);
+  background: rgba(11, 28, 40, 0.88);
+  pointer-events: auto;
+}
+
+.replay-bar__title {
+  font-weight: 600;
+  color: #e8f1f5;
+}
+
+.replay-bar__meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  color: #9bb4c2;
+}
+
+.replay-bar__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
 }
 
 .conditions__row--sog .conditions__swatch,

@@ -1,0 +1,20 @@
+{
+  "name": "nav-backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "better-sqlite3": "^12.4.1",
+    "hono": "^4.9.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^26.6.2",
+    "tsx": "^4.20.5"
+  }
+}

@@ -11,11 +11,21 @@ application, they are summed, and the resulting acceleration is integrated.
 
 ```bash
 npm install
-npm run dev      # play
-npm test         # all suites under src/**/__tests__ (node --test, no deps)
+npm run dev          # Vite UI + Hono API (scores & replays)
+npm run dev:ui       # frontend only
+npm run dev:backend  # API only (port 3001, SQLite under backend/data/)
+npm test             # all suites under ui/src/**/__tests__
 npm run test:unit    # math, sim, render, UI, conventions, fluids, integrator
 npm run test:physics # calibration manoeuvres A–G and sail polar H
 npm run physics:report   # the calibration numbers for the current BoatSpec
+```
+
+### Layout
+
+```
+ui/        Vite client (game + scoreboard)
+backend/   Hono API — POST/GET scores, replay JSON in SQLite
+shared/    Replay payload types (ui + backend)
 ```
 
 ## Controls
@@ -81,10 +91,10 @@ Not modelled (deliberately): CFD, cloth sails, 6-DOF motion, heel, waves,
 buoyancy meshes. Heel and waves are the next candidates; mooring lines, fenders
 and dock collisions come before them.
 
-## Layout
+## Source (ui/)
 
 ```
-src/
+ui/src/
   core/       Game loop, fixed timestep, input
   math/       Vec2, angles, units
   physics/
