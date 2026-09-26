@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Local dev: Vite UI (5173) + Hono API (3001), API proxied as /api from the UI.
+set -e
+cd "$(dirname "$0")"
+if [ ! -d node_modules ]; then
+  npm install
+fi
+exec npm run dev:watch

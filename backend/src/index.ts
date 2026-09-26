@@ -6,10 +6,21 @@ import { getScoreReplay, insertScore, listScores } from "./db.ts"
 
 const app = new Hono()
 
+function corsOrigins(): string[] {
+  const raw = process.env.UI_ORIGIN?.trim()
+  if (raw) {
+    return raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
+  return ["http://localhost:5173", "http://127.0.0.1:5173"]
+}
+
 app.use(
   "/api/*",
   cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: corsOrigins(),
   }),
 )
 

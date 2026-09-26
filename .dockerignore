@@ -1,0 +1,13 @@
+.git
+.gitignore
+.cursor
+.playwright-mcp
+**/node_modules
+ui/dist
+dist
+backend/data
+telemetry
+*.log
+.env
+.env.*
+!.env.example

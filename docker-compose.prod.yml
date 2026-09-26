@@ -1,0 +1,45 @@
+# Production: static UI + Hono API behind Caddy on port 80 inside the stack.
+# SQLite persists in volume `nav_sqlite`.
+#
+# Usage (on the VPS, from /root/pro/nav):
+#   HTTP_PORT=127.0.0.1:5012 docker compose -f docker-compose.prod.yml up -d --build
+#
+# Optional `.env` / `.env.production`:
+#   UI_ORIGIN=https://your.domain,http://localhost
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      NAV_DB_PATH: /data/nav.db
+      PORT: "3001"
+      UI_ORIGIN: ${UI_ORIGIN:-http://localhost,http://127.0.0.1}
+    volumes:
+      - nav_sqlite:/data
+    expose:
+      - "3001"
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  edge:
+    image: caddy:2-alpine
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - ./deploy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - api
+      - ui
+    restart: unless-stopped
+
+volumes:
+  nav_sqlite:

@@ -1,0 +1,25 @@
+#!/bin/sh
+# Install on gufoe as /root/pro/bin/nav (same pattern as nautiquiz).
+set -e
+set -x
+
+APP=nav
+PORT_BIND=127.0.0.1:5012
+COMPOSE_FILE=docker-compose.prod.yml
+
+cd ~/pro/$APP/
+git pull
+
+ENV_FILE_ARGS=""
+if [ -f "$(pwd)/.env.production" ]; then
+  ENV_FILE_ARGS="--env-file $(pwd)/.env.production"
+elif [ -f "$(pwd)/.env" ]; then
+  ENV_FILE_ARGS="--env-file $(pwd)/.env"
+fi
+
+docker rm -f "$APP" 2>/dev/null || true
+
+# shellcheck disable=SC2086
+env HTTP_PORT="$PORT_BIND" docker compose $ENV_FILE_ARGS -f "$COMPOSE_FILE" up -d --build --remove-orphans
+
+echo "Deploy succeeded — bind $PORT_BIND (point Caddy at this upstream)"

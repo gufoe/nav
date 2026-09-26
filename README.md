@@ -11,7 +11,7 @@ application, they are summed, and the resulting acceleration is integrated.
 
 ```bash
 npm install
-npm run dev          # Vite UI + Hono API (scores & replays)
+./dev                # or: npm run dev — UI :5173, API :3001 (/api proxied)
 npm run dev:ui       # frontend only
 npm run dev:backend  # API only (port 3001, SQLite under backend/data/)
 npm test             # all suites under ui/src/**/__tests__
@@ -26,7 +26,22 @@ npm run physics:report   # the calibration numbers for the current BoatSpec
 ui/        Vite client (game + scoreboard)
 backend/   Hono API — POST/GET scores, replay JSON in SQLite
 shared/    Replay payload types (ui + backend)
+deploy/    Caddy edge config + gufoe deploy script template
 ```
+
+### Production (Docker, gufoe-style)
+
+Same stack as **nautiquiz**: `ui` + `api` + Caddy `edge`, SQLite volume, bind to localhost for upstream Caddy.
+
+```bash
+# build & run locally
+HTTP_PORT=127.0.0.1:8088 docker compose -f docker-compose.prod.yml up -d --build
+
+# on gufoe: copy deploy/bin/nav → /root/pro/bin/nav, then
+# ~/pro/bin/nav
+```
+
+Optional env: copy `.env.example` → `.env.production` (`HTTP_PORT`, `UI_ORIGIN`).
 
 ## Controls
 
