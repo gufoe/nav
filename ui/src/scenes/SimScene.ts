@@ -35,6 +35,7 @@ import { objectiveTargets, type SemaphoreState } from "../sim/checkpointObjectiv
 import { evaluateObjectiveStatus } from "../sim/evaluateObjectiveStatus.ts"
 import { boatHullHitsDock } from "../sim/dockCollision.ts"
 import { GameplayRecorder } from "../recording/GameplayRecorder.ts"
+import { runTimerShouldStart } from "../recording/runTimer.ts"
 import {
   readRememberedPlayerName,
   rememberPlayerName,
@@ -80,6 +81,8 @@ export class SimScene implements Scene {
   private scoreSaved = false
   private scoreError: string | null = null
   private gameOver = false
+  /** Score/replay recording — latched on first meaningful SOG. */
+  private runTimerActive = false
 
   constructor(game: Game, scenario: Scenario) {
     this.game = game
@@ -119,6 +122,11 @@ export class SimScene implements Scene {
         <p class="conditions__boat" data-field="boat"></p>
         <p class="conditions__status hidden" data-field="status"></p>
         <ul class="conditions__list">
+          <li class="conditions__row conditions__row--run-time">
+            <span class="conditions__swatch"></span>
+            <span class="conditions__label">Score time</span>
+            <span class="conditions__value" data-field="run-time"></span>
+          </li>
           <li class="conditions__row conditions__row--sog">
             <span class="conditions__swatch"></span>
             <span class="conditions__label">SOG</span>
@@ -303,9 +311,12 @@ export class SimScene implements Scene {
         aria-label="Hold objective"
       >
         <header class="objective-panel__head">
-          <p class="objective-panel__step" data-field="objective-step"></p>
-          <h2 class="objective-panel__title" data-field="objective-title"></h2>
-          <p class="objective-panel__hint" data-field="objective-hint"></p>
+          <div class="objective-panel__head-text">
+            <p class="objective-panel__step" data-field="objective-step"></p>
+            <h2 class="objective-panel__title" data-field="objective-title"></h2>
+            <p class="objective-panel__hint" data-field="objective-hint"></p>
+          </div>
+          <p class="objective-panel__run-time" data-field="run-time" aria-label="Score time">—</p>
         </header>
         <ul class="objective-semaphores" aria-label="Requirements">
           <li class="objective-semaphore" data-semaphore="place" data-state="off">
@@ -542,7 +553,14 @@ export class SimScene implements Scene {
       result.forces.groundVelocity.x,
       result.forces.groundVelocity.y,
     )
-    if (!this.checkpointProgress.isComplete) {
+    const sog = Math.hypot(
+      result.forces.groundVelocity.x,
+      result.forces.groundVelocity.y,
+    )
+    if (!this.runTimerActive && runTimerShouldStart(sog)) {
+      this.runTimerActive = true
+    }
+    if (this.runTimerActive && !this.checkpointProgress.isComplete) {
       this.recorder.recordStep(controls)
     }
     if (tickResult.levelJustPassed) {
@@ -654,6 +672,7 @@ export class SimScene implements Scene {
     this.scoreError = null
     this.gameOver = false
     this.paused = false
+    this.runTimerActive = false
     this.dockCameraSnapPending = true
   }
 
@@ -690,6 +709,8 @@ export class SimScene implements Scene {
       this.forces.groundVelocity.y,
     )
     const helmDeg = radToDeg(boat.rudderAngle)
+
+    this.refreshRunTimeHud()
 
     set("scenario", this.scenario.name)
     set("boat", `${this.boatSpec.prototype} · ${this.boatSpec.kind}`)
@@ -825,6 +846,18 @@ export class SimScene implements Scene {
       el.style.left = "auto"
       el.style.right = "50%"
     }
+  }
+
+  private refreshRunTimeHud(): void {
+    if (!this.hud) return
+    const label = this.runTimerActive
+      ? formatRunTimeMs(this.recorder.simTimeMs())
+      : "—"
+    this.hud.querySelectorAll<HTMLElement>('[data-field="run-time"]').forEach((el) => {
+      el.textContent = label
+      el.classList.toggle("run-time--live", this.runTimerActive)
+      el.classList.toggle("run-time--waiting", !this.runTimerActive)
+    })
   }
 
   private refreshGameOverOverlay(): void {

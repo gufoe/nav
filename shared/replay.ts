@@ -23,7 +23,7 @@ export interface ReplayPayloadV1 {
   v: 1
   scenarioId: string
   boatId: string
-  /** Simulation time = frames.length × fixedDt. */
+  /** Simulation time = frames.length × fixedDt (recorded after the boat first moves). */
   timeMs: number
   fixedDt: number
   frames: ReplayFrame[]

@@ -32,6 +32,11 @@ export class GameplayRecorder {
     this.frames.push(frameFromControls(controls))
   }
 
+  /** Recorded simulation time (scoreboard), from physics step count only. */
+  simTimeMs(): number {
+    return replaySimTimeMs({ fixedDt: PHYSICS_DT, frames: this.frames })
+  }
+
   finish(): ReplayPayloadV2 {
     if (!this.initial) {
       throw new Error("GameplayRecorder.reset() was never called")

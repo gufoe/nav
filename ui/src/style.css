@@ -754,6 +754,19 @@ body {
   color: #9ef0c8;
 }
 
+.objective-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.35rem;
+}
+
+.objective-panel__head-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .objective-panel__title {
   margin: 0;
   font-family: "IBM Plex Serif", Georgia, serif;
@@ -761,6 +774,39 @@ body {
   font-weight: 600;
   line-height: 1.25;
   color: #e8f1f5;
+}
+
+.objective-panel__run-time {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.28rem 0.45rem;
+  border: 1px solid rgba(106, 160, 188, 0.28);
+  border-radius: 4px;
+  background: rgba(8, 20, 28, 0.55);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: #8aa3b2;
+  white-space: nowrap;
+}
+
+.objective-panel__run-time.run-time--live,
+.conditions__value.run-time--live {
+  color: #9ef0c8;
+}
+
+.objective-panel__run-time.run-time--live {
+  border-color: rgba(110, 220, 160, 0.35);
+}
+
+.conditions__row--run-time .conditions__swatch {
+  background: #62d898;
+}
+
+.run-time--waiting {
+  color: var(--hud-muted);
 }
 
 .objective-panel__hint {
@@ -2268,10 +2314,22 @@ body {
     display: none;
   }
 
+  .objective-panel__head {
+    align-items: center;
+  }
+
+  .objective-panel__head-text {
+    text-align: center;
+  }
+
   .objective-panel__title {
-    margin-bottom: 0.4rem;
+    margin-bottom: 0;
     font-size: 0.88rem;
     text-align: center;
+  }
+
+  .objective-panel__run-time {
+    font-size: 0.82rem;
   }
 
   .objective-semaphores {
@@ -2330,10 +2388,22 @@ html.touch-ui .objective-panel__step {
   display: none;
 }
 
+html.touch-ui .objective-panel__head {
+  align-items: center;
+}
+
+html.touch-ui .objective-panel__head-text {
+  text-align: center;
+}
+
 html.touch-ui .objective-panel__title {
-  margin-bottom: 0.4rem;
+  margin-bottom: 0;
   font-size: 0.88rem;
   text-align: center;
+}
+
+html.touch-ui .objective-panel__run-time {
+  font-size: 0.82rem;
 }
 
 html.touch-ui .objective-semaphores {
