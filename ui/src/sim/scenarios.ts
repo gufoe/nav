@@ -14,7 +14,7 @@ import { degToRad } from "../math/MathUtil.ts"
 const FINGER_DOCK: Dock = {
   position: Vec2.from(0, 0),
   heading: degToRad(-90),
-  length: 14,
+  length: 28,
   width: 3,
 }
 

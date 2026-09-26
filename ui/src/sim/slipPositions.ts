@@ -79,6 +79,7 @@ function centerOffFace(face: Vec2, normal: Vec2, distance: number): Vec2 {
   return Vec2.from(face.x + normal.x * distance, face.y + normal.y * distance)
 }
 
+/** Same as the finger: south → north (bow north on the default layout). */
 function parallelHeadingDeg(dock: Dock): number {
   return radToDeg(dock.heading)
 }

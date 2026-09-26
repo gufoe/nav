@@ -283,7 +283,6 @@ export class ReplayScene implements Scene {
         rudderAngle: this.boat.rudderAngle,
       })
     })
-    renderer.drawViewFrame(this.dockCamera.viewFrame)
   }
 
   private goBack(): void {

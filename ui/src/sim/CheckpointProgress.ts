@@ -123,7 +123,13 @@ export class CheckpointProgress {
 
     const criteria = this.criteriaAt(this.index)
     const inside = boatInParkingZone(boat, zone)
-    const meeting = isBoatMeetingHold(boat, groundVx, groundVy, criteria)
+    const meeting = isBoatMeetingHold(
+      boat,
+      groundVx,
+      groundVy,
+      criteria,
+      zone.heading,
+    )
 
     if (inside && meeting) {
       this.holdElapsed += dt

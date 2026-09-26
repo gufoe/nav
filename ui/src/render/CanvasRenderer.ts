@@ -1,5 +1,5 @@
 import type { FrameContext } from "../core/Scene.ts"
-import type { ViewFrame } from "./DockCamera.ts"
+import { boatHullLocalOutline } from "./boatHullOutline.ts"
 
 /** Lightweight canvas helpers. World units are meters. */
 export class CanvasRenderer {
@@ -32,21 +32,6 @@ export class CanvasRenderer {
     c.scale(this.pixelsPerMeter, -this.pixelsPerMeter)
     c.translate(-this.worldCenterX, -this.worldCenterY)
     draw()
-    c.restore()
-  }
-
-  /** Soft outline of the dock-centric playfield (matches axis-aligned framing). */
-  drawViewFrame(frame: ViewFrame): void {
-    const c = this.ctx
-    const { cx, cy, halfW, halfH } = frame
-    c.save()
-    c.beginPath()
-    c.ellipse(cx, cy, halfW, halfH, 0, 0, Math.PI * 2)
-    c.strokeStyle = "rgba(106, 160, 188, 0.28)"
-    c.lineWidth = 1.25
-    c.setLineDash([5, 9])
-    c.stroke()
-    c.setLineDash([])
     c.restore()
   }
 
@@ -91,7 +76,7 @@ export class CanvasRenderer {
     c.rotate(heading)
 
     const halfL = length / 2
-    const halfB = beam / 2
+    const hull = boatHullLocalOutline(length, beam)
 
     // Rudder: the blade trails aft, opposite the chord, so hard to starboard
     // swings the visible blade to starboard.
@@ -111,11 +96,10 @@ export class CanvasRenderer {
     c.strokeStyle = "#8aa3b2"
     c.lineWidth = 1.5 / this.pixelsPerMeter
     c.beginPath()
-    c.moveTo(halfL, 0)
-    c.lineTo(-halfL * 0.7, halfB)
-    c.lineTo(-halfL, halfB * 0.4)
-    c.lineTo(-halfL, -halfB * 0.4)
-    c.lineTo(-halfL * 0.7, -halfB)
+    c.moveTo(hull[0]!.x, hull[0]!.y)
+    for (let i = 1; i < hull.length; i++) {
+      c.lineTo(hull[i]!.x, hull[i]!.y)
+    }
     c.closePath()
     c.fill()
     c.stroke()

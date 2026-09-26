@@ -2,6 +2,7 @@ import { describe, test } from "node:test"
 import assert from "node:assert/strict"
 
 import { createBoatState } from "../../physics/model/BoatState.ts"
+import { degToRad } from "../../math/MathUtil.ts"
 import {
   APPROACH_HOLD,
   BERTH_HOLD,
@@ -15,6 +16,14 @@ describe("parkingHold", () => {
     const strict = isBoatMeetingHold(boat, 0.55, 0, BERTH_HOLD)
     assert.equal(slow, true)
     assert.equal(strict, false)
+  })
+
+  test("heading must match slot when target heading is provided", () => {
+    const aligned = createBoatState({ u: 0.1, v: 0, r: 0, heading: degToRad(-90) })
+    const skewed = createBoatState({ u: 0.1, v: 0, r: 0, heading: degToRad(-50) })
+    const target = degToRad(-90)
+    assert.equal(isBoatMeetingHold(aligned, 0.1, 0, BERTH_HOLD, target), true)
+    assert.equal(isBoatMeetingHold(skewed, 0.1, 0, BERTH_HOLD, target), false)
   })
 
   test("approach allows SOG/STW difference from current", () => {

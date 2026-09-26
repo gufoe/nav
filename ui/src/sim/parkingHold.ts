@@ -14,6 +14,8 @@ export interface HoldCriteria {
   /** Max |SOG − STW| while in the box (current / wind allowed on approach). */
   maxSogStwDelta: number
   maxYawRate: number
+  /** Max |boat heading − slot heading| [rad]. */
+  maxHeadingError: number
   holdSeconds: number
 }
 
@@ -24,6 +26,7 @@ export const APPROACH_HOLD: HoldCriteria = {
   maxStw: 0.8,
   maxSogStwDelta: 0.6,
   maxYawRate: 0.07,
+  maxHeadingError: (20 * Math.PI) / 180,
   holdSeconds: 0.85,
 }
 
@@ -34,6 +37,7 @@ export const BERTH_HOLD: HoldCriteria = {
   maxStw: 0.18,
   maxSogStwDelta: 0.12,
   maxYawRate: 0.04,
+  maxHeadingError: (20 * Math.PI) / 180,
   holdSeconds: 1.15,
 }
 
@@ -41,17 +45,30 @@ export function holdCriteriaFor(profile: HoldProfile): HoldCriteria {
   return profile === "approach" ? APPROACH_HOLD : BERTH_HOLD
 }
 
+export function headingErrorRad(boatHeading: number, targetHeading: number): number {
+  let d = boatHeading - targetHeading
+  while (d > Math.PI) d -= 2 * Math.PI
+  while (d < -Math.PI) d += 2 * Math.PI
+  return Math.abs(d)
+}
+
 export function isBoatMeetingHold(
   boat: BoatState,
   groundVx: number,
   groundVy: number,
   criteria: HoldCriteria,
+  targetHeading?: number,
 ): boolean {
   const sog = Math.hypot(groundVx, groundVy)
   const stw = speedThroughWater(boat)
   if (sog > criteria.maxSog || stw > criteria.maxStw) return false
   if (Math.abs(sog - stw) > criteria.maxSogStwDelta) return false
   if (Math.abs(boat.r) > criteria.maxYawRate) return false
+  if (targetHeading !== undefined) {
+    if (headingErrorRad(boat.heading, targetHeading) > criteria.maxHeadingError) {
+      return false
+    }
+  }
   return true
 }
 

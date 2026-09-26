@@ -31,7 +31,9 @@ import {
   resolveCheckpoints,
   type ParkingCheckpoint,
 } from "../sim/checkpoints.ts"
-import { describeHoldSpeedLimit } from "../sim/parkingHold.ts"
+import { objectiveTargets, type SemaphoreState } from "../sim/checkpointObjective.ts"
+import { evaluateObjectiveStatus } from "../sim/evaluateObjectiveStatus.ts"
+import { boatHullHitsDock } from "../sim/dockCollision.ts"
 import { GameplayRecorder } from "../recording/GameplayRecorder.ts"
 import {
   readRememberedPlayerName,
@@ -75,6 +77,7 @@ export class SimScene implements Scene {
   private scoreSubmitting = false
   private scoreSaved = false
   private scoreError: string | null = null
+  private gameOver = false
 
   constructor(game: Game, scenario: Scenario) {
     this.game = game
@@ -113,12 +116,6 @@ export class SimScene implements Scene {
         <div class="conditions__title conditions__title--scenario" data-field="scenario"></div>
         <p class="conditions__boat" data-field="boat"></p>
         <p class="conditions__status hidden" data-field="status"></p>
-        <p class="conditions__checkpoint hidden" data-field="checkpoint"></p>
-        <div class="checkpoint-meter hidden" data-field="checkpoint-meter" aria-hidden="true">
-          <div class="checkpoint-meter__track">
-            <div class="checkpoint-meter__fill" data-field="checkpoint-fill"></div>
-          </div>
-        </div>
         <ul class="conditions__list">
           <li class="conditions__row conditions__row--sog">
             <span class="conditions__swatch"></span>
@@ -298,6 +295,80 @@ export class SimScene implements Scene {
           <div class="instrument-table" data-field="forces-prop"></div>
         </aside>
       </div>
+      <aside
+        class="objective-panel hidden"
+        data-field="objective-panel"
+        aria-label="Hold objective"
+      >
+        <header class="objective-panel__head">
+          <p class="objective-panel__step" data-field="objective-step"></p>
+          <h2 class="objective-panel__title" data-field="objective-title"></h2>
+          <p class="objective-panel__hint" data-field="objective-hint"></p>
+        </header>
+        <ul class="objective-semaphores" aria-label="Requirements">
+          <li class="objective-semaphore" data-semaphore="place" data-state="off">
+            <span class="objective-semaphore__lights" aria-hidden="true">
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--red"></span>
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--amber"></span>
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--green"></span>
+            </span>
+            <span class="objective-semaphore__body">
+              <span class="objective-semaphore__label">Place</span>
+              <span class="objective-semaphore__value" data-field="objective-place"></span>
+            </span>
+          </li>
+          <li class="objective-semaphore" data-semaphore="speed" data-state="off">
+            <span class="objective-semaphore__lights" aria-hidden="true">
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--red"></span>
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--amber"></span>
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--green"></span>
+            </span>
+            <span class="objective-semaphore__body">
+              <span class="objective-semaphore__label">Speed</span>
+              <span class="objective-semaphore__value" data-field="objective-speed"></span>
+            </span>
+          </li>
+          <li class="objective-semaphore" data-semaphore="bearing" data-state="off">
+            <span class="objective-semaphore__lights" aria-hidden="true">
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--red"></span>
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--amber"></span>
+              <span class="objective-semaphore__lamp objective-semaphore__lamp--green"></span>
+            </span>
+            <span class="objective-semaphore__body">
+              <span class="objective-semaphore__label">Heading</span>
+              <span class="objective-semaphore__value" data-field="objective-bearing"></span>
+            </span>
+          </li>
+        </ul>
+        <div class="checkpoint-meter hidden" data-field="checkpoint-meter" aria-hidden="true">
+          <div class="checkpoint-meter__track">
+            <div class="checkpoint-meter__fill" data-field="checkpoint-fill"></div>
+          </div>
+        </div>
+      </aside>
+      <div
+        class="game-over hidden"
+        data-field="game-over"
+        role="alertdialog"
+        aria-labelledby="game-over-title"
+        aria-modal="true"
+      >
+        <div class="game-over__backdrop" aria-hidden="true"></div>
+        <div class="game-over__panel">
+          <p class="game-over__eyebrow">Game over</p>
+          <h2 class="game-over__title" id="game-over-title">Hit the dock</h2>
+          <p class="game-over__detail" data-field="game-over-detail">
+            Hull contact with the pontoon — no score saved for this run.
+          </p>
+          <div class="game-over__actions">
+            <button class="btn btn--primary" type="button" data-action="game-over-retry">
+              Try again
+            </button>
+            <button class="btn" type="button" data-action="game-over-menu">Scenarios</button>
+          </div>
+          <p class="game-over__keys"><kbd>R</kbd> reset · <kbd>Esc</kbd> menu</p>
+        </div>
+      </div>
       <div class="level-pass hidden" data-field="level-pass" role="dialog" aria-labelledby="level-pass-title">
         <p class="level-pass__title" id="level-pass-title">Level passed</p>
         <p class="level-pass__detail" data-field="level-pass-detail">All holds complete — well done.</p>
@@ -327,6 +398,18 @@ export class SimScene implements Scene {
     hud.querySelector<HTMLButtonElement>("[data-action='help']")?.addEventListener("click", () => {
       this.game.toggleHelp()
     })
+    hud.querySelector<HTMLButtonElement>("[data-action='game-over-retry']")?.addEventListener(
+      "click",
+      () => {
+        this.reset()
+      },
+    )
+    hud.querySelector<HTMLButtonElement>("[data-action='game-over-menu']")?.addEventListener(
+      "click",
+      () => {
+        this.game.setScene(new MenuScene(this.game))
+      },
+    )
     hud.querySelector<HTMLButtonElement>("[data-action='level-menu']")?.addEventListener(
       "click",
       () => {
@@ -416,7 +499,7 @@ export class SimScene implements Scene {
 
   /** Deterministic fixed-step physics; rendering interpolation is not needed yet. */
   fixedUpdate(ctx: FrameContext): void {
-    if (this.paused) return
+    if (this.paused || this.gameOver) return
     const controls = snapshotControls(this.helm.controls)
     const result = this.dynamics.step(
       this.boat,
@@ -426,6 +509,13 @@ export class SimScene implements Scene {
     )
     this.boat = result.state
     this.forces = result.forces
+
+    if (boatHullHitsDock(this.boat, this.dynamics.boat, this.scenario.dock)) {
+      this.gameOver = true
+      this.paused = true
+      this.refreshGameOverOverlay()
+      return
+    }
 
     const tickResult = this.checkpointProgress.tick(
       ctx.time.fixedDt,
@@ -531,7 +621,6 @@ export class SimScene implements Scene {
       })
     })
 
-    renderer.drawViewFrame(this.dockCamera.viewFrame)
   }
 
   private reset(): void {
@@ -544,6 +633,8 @@ export class SimScene implements Scene {
     this.scoreSubmitting = false
     this.scoreSaved = false
     this.scoreError = null
+    this.gameOver = false
+    this.paused = false
     this.dockCameraSnapPending = true
   }
 
@@ -567,11 +658,12 @@ export class SimScene implements Scene {
       if (el) el.textContent = text
     }
 
-    const setStatus = (text: string): void => {
+    const setStatus = (text: string, danger = false): void => {
       const el = this.hud?.querySelector<HTMLElement>('[data-field="status"]')
       if (!el) return
       el.textContent = text
       el.classList.toggle("hidden", text.length === 0)
+      el.classList.toggle("conditions__status--danger", danger)
     }
 
     const sog = Math.hypot(
@@ -600,7 +692,8 @@ export class SimScene implements Scene {
       "engine",
       `${engineLabel} · ${Math.abs(boat.rpm).toFixed(0)} rpm · ${(this.forces.thrust / 1000).toFixed(2)} kN`,
     )
-    setStatus(this.paused ? "Simulation paused" : "")
+    setStatus(this.gameOver ? "" : this.paused ? "Simulation paused" : "", false)
+    this.refreshGameOverOverlay()
     this.refreshCheckpointHud()
     set("sim-speed", `${this.simSpeed}×`)
 
@@ -714,10 +807,25 @@ export class SimScene implements Scene {
     }
   }
 
+  private refreshGameOverOverlay(): void {
+    if (!this.hud) return
+    this.hud.classList.toggle("hud-root--game-over", this.gameOver)
+    const panel = this.hud.querySelector<HTMLElement>('[data-field="game-over"]')
+    panel?.classList.toggle("hidden", !this.gameOver)
+    const detail = this.hud.querySelector<HTMLElement>('[data-field="game-over-detail"]')
+    if (detail && this.gameOver) {
+      const cp = this.checkpointProgress.snapshot()
+      const holdNum = Math.min(cp.currentIndex + 1, this.checkpoints.length)
+      const active = this.checkpoints[cp.currentIndex]
+      const holdName = active?.label.split("—")[0]?.trim() ?? `Hold ${holdNum}`
+      detail.textContent = `Contact on ${holdName} (hold ${holdNum}/${this.checkpoints.length}). No score saved — reset and try again.`
+    }
+  }
+
   private refreshCheckpointHud(): void {
     if (!this.hud) return
     const cp = this.checkpointProgress.snapshot()
-    const checkpointEl = this.hud.querySelector<HTMLElement>('[data-field="checkpoint"]')
+    const panelEl = this.hud.querySelector<HTMLElement>('[data-field="objective-panel"]')
     const meterEl = this.hud.querySelector<HTMLElement>('[data-field="checkpoint-meter"]')
     const fillEl = this.hud.querySelector<HTMLElement>('[data-field="checkpoint-fill"]')
     const passEl = this.hud.querySelector<HTMLElement>('[data-field="level-pass"]')
@@ -730,42 +838,76 @@ export class SimScene implements Scene {
       }
     }
 
-    if (!checkpointEl || !meterEl || !fillEl) return
+    if (!panelEl || !meterEl || !fillEl) return
 
     const total = this.checkpoints.length
+    const setField = (field: string, text: string): void => {
+      const el = this.hud?.querySelector<HTMLElement>(`[data-field="${field}"]`)
+      if (el) el.textContent = text
+    }
+
+    panelEl.classList.remove("hidden")
 
     if (cp.phase === "complete") {
-      checkpointEl.textContent = `${total}/${total} holds — level complete`
-      checkpointEl.classList.remove("hidden")
+      setField("objective-step", `Hold ${total}/${total}`)
+      setField("objective-title", "Level complete")
+      setField("objective-hint", "All holds secured.")
+      this.setObjectiveSemaphore("place", "go", "—")
+      this.setObjectiveSemaphore("speed", "go", "—")
+      this.setObjectiveSemaphore("bearing", "go", "—")
       meterEl.classList.add("hidden")
       return
     }
 
-    checkpointEl.classList.remove("hidden")
     const holdNum = cp.currentIndex + 1
     const active = this.checkpoints[cp.currentIndex]
-    const title = active ? `${active.label}` : `Hold ${holdNum}`
-    const detail = active?.technique ?? "Park in the green box"
-    const speedHint = cp.holdCriteria
-      ? describeHoldSpeedLimit(cp.holdCriteria)
-      : ""
+    const title = active?.label.split("—")[0]?.trim() ?? `Hold ${holdNum}`
+    const hint = active?.technique ?? "Park in the marked green box."
+
+    setField("objective-step", `Hold ${holdNum}/${total}`)
+    setField("objective-title", title)
+    setField("objective-hint", hint)
 
     if (cp.phase === "celebrating") {
-      checkpointEl.textContent = `${title} — secured`
+      setField("objective-hint", "Hold secured — next slot unlocks.")
+      this.setObjectiveSemaphore("place", "go", "In box")
+      this.setObjectiveSemaphore("speed", "go", "OK")
+      this.setObjectiveSemaphore("bearing", "go", "OK")
       meterEl.classList.add("hidden")
       return
     }
+
+    if (!active || !cp.holdCriteria) return
+
+    const targets = objectiveTargets(active, cp.holdCriteria)
+    const gv = this.forces.groundVelocity
+    const status = evaluateObjectiveStatus(
+      this.boat,
+      gv.x,
+      gv.y,
+      active,
+      cp.holdCriteria,
+    )
+
+    this.setObjectiveSemaphore("place", status.place, targets.place)
+    this.setObjectiveSemaphore("speed", status.speed, targets.speed)
+    this.setObjectiveSemaphore("bearing", status.bearing, targets.bearing)
 
     meterEl.classList.remove("hidden")
     const pct = Math.round(cp.holdProgress * 100)
     fillEl.style.width = `${pct}%`
-    if (cp.holdProgress > 0.02) {
-      const verb =
-        cp.holdCriteria?.profile === "approach" ? "hold slow" : "stay still"
-      checkpointEl.textContent = `${holdNum}/${total} · ${title} — ${verb} (${pct}%)`
-    } else {
-      checkpointEl.textContent = `${holdNum}/${total} · ${title} — ${detail} (${speedHint})`
-    }
+  }
+
+  private setObjectiveSemaphore(
+    kind: "place" | "speed" | "bearing",
+    state: SemaphoreState,
+    value: string,
+  ): void {
+    const row = this.hud?.querySelector<HTMLElement>(`[data-semaphore="${kind}"]`)
+    if (!row) return
+    row.dataset.state = state
+    const valueEl = row.querySelector<HTMLElement>(`[data-field="objective-${kind}"]`)
+    if (valueEl) valueEl.textContent = value
   }
 
   private refreshLevelPassOverlay(): void {
