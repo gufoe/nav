@@ -7,16 +7,26 @@ export class CanvasRenderer {
   private pixelsPerMeter: number
   private worldCenterX = 0
   private worldCenterY = 0
+  private screenCenterX: number | null = null
+  private screenCenterY: number | null = null
 
   constructor(ctx: CanvasRenderingContext2D, pixelsPerMeter = 12) {
     this.ctx = ctx
     this.pixelsPerMeter = pixelsPerMeter
   }
 
-  setView(pixelsPerMeter: number, centerX: number, centerY: number): void {
+  setView(
+    pixelsPerMeter: number,
+    centerX: number,
+    centerY: number,
+    screenCenterX?: number,
+    screenCenterY?: number,
+  ): void {
     this.pixelsPerMeter = pixelsPerMeter
     this.worldCenterX = centerX
     this.worldCenterY = centerY
+    this.screenCenterX = screenCenterX ?? null
+    this.screenCenterY = screenCenterY ?? null
   }
 
   clear(width: number, height: number, color = "#0b1c28"): void {
@@ -28,7 +38,7 @@ export class CanvasRenderer {
   withWorld(ctx: FrameContext, draw: () => void): void {
     const { ctx: c, width, height } = ctx
     c.save()
-    c.translate(width / 2, height / 2)
+    c.translate(this.screenCenterX ?? width / 2, this.screenCenterY ?? height / 2)
     c.scale(this.pixelsPerMeter, -this.pixelsPerMeter)
     c.translate(-this.worldCenterX, -this.worldCenterY)
     draw()

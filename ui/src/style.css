@@ -2139,48 +2139,29 @@ body {
   }
 
   .conditions--boat {
-    top: max(0.6rem, env(safe-area-inset-top));
-    left: 0.6rem;
-    width: min(14.5rem, calc(100vw - 1.2rem));
-    padding: 0.55rem 0.65rem;
-  }
-
-  .conditions--boat .conditions__boat,
-  .conditions--boat .conditions__row--stw,
-  .conditions--boat .conditions__row--drift,
-  .conditions--boat .conditions__row--rot,
-  .conditions--boat .conditions__row--engine,
-  .conditions--boat .hud-meters {
     display: none;
-  }
-
-  .conditions--boat .conditions__title {
-    margin-bottom: 0.35rem;
-    padding-bottom: 0.3rem;
-  }
-
-  .conditions--boat .conditions__title--scenario {
-    font-size: 0.8rem;
-  }
-
-  .conditions--boat .conditions__subtitle {
-    margin-top: 0.35rem;
-  }
-
-  .conditions--boat .conditions__list {
-    gap: 0.15rem;
   }
 
   .objective-panel {
     right: 0.6rem;
-    bottom: 10.5rem;
-    width: min(13rem, calc(100vw - 1.2rem));
-    padding: 0.55rem 0.65rem;
+    top: max(0.6rem, env(safe-area-inset-top));
+    bottom: auto;
+    width: min(11.5rem, calc(100vw - 1.2rem));
+    padding: 0.45rem 0.55rem;
   }
 
   .objective-panel__hint,
-  .objective-semaphore__label {
+  .objective-semaphore__label,
+  .objective-panel__step {
     display: none;
+  }
+
+  .objective-panel__title {
+    font-size: 0.82rem;
+  }
+
+  .objective-semaphore__value {
+    font-size: 0.7rem;
   }
 
   .objective-semaphores {

@@ -464,7 +464,13 @@ export class SimScene implements Scene {
 
   private applyDockCameraView(): void {
     const cam = this.dockCamera
-    this.renderer?.setView(cam.pixelsPerMeter, cam.centerX, cam.centerY)
+    this.renderer?.setView(
+      cam.pixelsPerMeter,
+      cam.centerX,
+      cam.centerY,
+      cam.viewFrame.cx,
+      cam.viewFrame.cy,
+    )
     this.envViz?.setPixelsPerMeter(cam.pixelsPerMeter)
   }
 

@@ -61,6 +61,26 @@ export class DockCamera {
 }
 
 export function computeViewFrame(width: number, height: number): ViewFrame {
+  // Portrait touch devices need a clear centre lane between the compact status
+  // panel and the touch helm. Framing within that lane keeps both boat and dock visible.
+  if (width < height * 0.8) {
+    const padX = width * 0.06
+    const padTop = height * 0.24
+    const padBottom = height * 0.31
+    const left = padX
+    const right = width - padX
+    const top = padTop
+    const bottom = height - padBottom
+    const margin = 0.92
+
+    return {
+      cx: (left + right) / 2,
+      cy: (top + bottom) / 2,
+      halfW: Math.max(72, (right - left) * 0.5 * margin),
+      halfH: Math.max(72, (bottom - top) * 0.5 * margin),
+    }
+  }
+
   const cx = width / 2
   const cy = height / 2
   const padLeft = Math.min(300, width * 0.28)

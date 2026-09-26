@@ -235,7 +235,13 @@ export class ReplayScene implements Scene {
     }
     this.dockCamera.update(ctx.time.dt, target)
     const cam = this.dockCamera
-    renderer.setView(cam.pixelsPerMeter, cam.centerX, cam.centerY)
+    renderer.setView(
+      cam.pixelsPerMeter,
+      cam.centerX,
+      cam.centerY,
+      cam.viewFrame.cx,
+      cam.viewFrame.cy,
+    )
     envViz.setPixelsPerMeter(cam.pixelsPerMeter)
 
     renderer.clear(ctx.width, ctx.height)
@@ -307,6 +313,8 @@ export class ReplayScene implements Scene {
       this.dockCamera.pixelsPerMeter,
       this.dockCamera.centerX,
       this.dockCamera.centerY,
+      this.dockCamera.viewFrame.cx,
+      this.dockCamera.viewFrame.cy,
     )
     this.envViz?.setPixelsPerMeter(this.dockCamera.pixelsPerMeter)
   }

@@ -69,4 +69,12 @@ describe("DockCamera", () => {
     assert.ok(cy - halfH > 80)
     assert.ok(cy + halfH < 720 - 70)
   })
+
+  test("portrait frame leaves a centre lane for touch controls", () => {
+    const { cx, cy, halfW, halfH } = computeViewFrame(1080, 1920)
+    assert.equal(cx, 540)
+    assert.ok(cy < 960, `portrait frame should sit above centre, got ${cy}`)
+    assert.ok(halfW > 400, `portrait frame should use most of the screen width, got ${halfW}`)
+    assert.ok(halfH > 300, `portrait frame should leave a useful centre lane, got ${halfH}`)
+  })
 })
