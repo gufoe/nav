@@ -37,11 +37,18 @@ Same stack as **nautiquiz**: `ui` + `api` + Caddy `edge`, SQLite volume, bind to
 # build & run locally
 HTTP_PORT=127.0.0.1:8088 docker compose -f docker-compose.prod.yml up -d --build
 
-# on gufoe: copy deploy/bin/nav → /root/pro/bin/nav, then
-# ~/pro/bin/nav
+# deploy to production (the server pulls the current main branch)
+ssh root@gufoe.it '~/pro/bin/nav'
+
+# confirm containers and the local edge endpoint on the server
+ssh root@gufoe.it 'cd /root/pro/nav && docker compose --env-file .env.production -f docker-compose.prod.yml ps && curl -fsS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5012/'
 ```
 
 Optional env: copy `.env.example` → `.env.production` (`HTTP_PORT`, `UI_ORIGIN`).
+
+The production deploy script is installed at `/root/pro/bin/nav`. It pulls from
+GitHub over SSH, rebuilds the Docker Compose stack, and binds Caddy to
+`127.0.0.1:5012` for the upstream Caddy configuration.
 
 ## Controls
 
