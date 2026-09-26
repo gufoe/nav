@@ -1,6 +1,11 @@
 import type { FrameContext, Scene } from "../core/Scene.ts"
 import type { Game } from "../core/Game.ts"
-import { controlsFromFrame, type ReplayPayload } from "../../../shared/replay.ts"
+import {
+  type ReplayPayload,
+  replaySimTimeMs,
+  resolveReplayInitial,
+} from "../../../shared/replay.ts"
+import { stepReplay } from "../recording/replayPhysics.ts"
 import { SCENARIOS } from "../sim/scenarios.ts"
 import { CanvasRenderer } from "../render/CanvasRenderer.ts"
 import { DockCamera } from "../render/DockCamera.ts"
@@ -18,7 +23,6 @@ import { WakeTrail } from "../sim/WakeTrail.ts"
 import { resolveCheckpoints } from "../sim/checkpoints.ts"
 import { MenuScene } from "./MenuScene.ts"
 import { formatRunTimeMs } from "../util/formatTime.ts"
-import { PHYSICS_DT } from "../physics/fluids/constants.ts"
 import {
   DEFAULT_REPLAY_SPEED,
   formatReplaySpeed,
@@ -72,7 +76,9 @@ export class ReplayScene implements Scene {
     this.scenario = scenario
     this.boatSpec = boatById(replay.boatId)
     this.dynamics = new BoatDynamics(this.boatSpec)
-    this.boat = cloneBoatState(scenario.boat)
+    this.boat = cloneBoatState(
+      resolveReplayInitial(replay, cloneBoatState(scenario.boat)),
+    )
     this.forces = this.dynamics.computeForces(
       this.boat,
       createControls(),
@@ -84,7 +90,7 @@ export class ReplayScene implements Scene {
   enter(ctx: FrameContext): void {
     this.previousFixedDt = this.game.time.fixedDt
     this.previousTimeScale = this.game.time.scale
-    this.game.time.fixedDt = PHYSICS_DT
+    this.game.time.fixedDt = this.replay.fixedDt
     this.replaySpeed = DEFAULT_REPLAY_SPEED
     this.applyReplaySpeed()
 
@@ -184,28 +190,29 @@ export class ReplayScene implements Scene {
   }
 
   fixedUpdate(ctx: FrameContext): void {
+    void ctx
     if (this.paused || this.finished) return
     const frame = this.replay.frames[this.frameIndex]
     if (!frame) {
       this.finished = true
       return
     }
-    const controls = createControls(controlsFromFrame(frame))
-    const result = this.dynamics.step(
+    const env = environmentFromScenario(this.scenario!.environment)
+    const result = stepReplay(
+      this.dynamics,
       this.boat,
-      controls,
-      environmentFromScenario(this.scenario!.environment),
-      ctx.time.fixedDt,
+      frame,
+      env,
+      this.replay.fixedDt,
     )
     this.boat = result.state
     this.forces = result.forces
     this.frameIndex += 1
 
-    const env = environmentFromScenario(this.scenario!.environment)
     const halfL = this.boatSpec.lengthOverall / 2
     const sternX = this.boat.x - Math.cos(this.boat.heading) * halfL * 0.92
     const sternY = this.boat.y - Math.sin(this.boat.heading) * halfL * 0.92
-    this.wake.tick(ctx.time.fixedDt, sternX, sternY, currentVelocityWorld(env))
+    this.wake.tick(this.replay.fixedDt, sternX, sternY, currentVelocityWorld(env))
 
     if (this.frameIndex >= this.replay.frames.length) {
       this.finished = true
@@ -308,7 +315,9 @@ export class ReplayScene implements Scene {
   private restartPlayback(): void {
     this.frameIndex = 0
     this.finished = this.replay.frames.length === 0
-    this.boat = cloneBoatState(this.scenario!.boat)
+    this.boat = cloneBoatState(
+      resolveReplayInitial(this.replay, cloneBoatState(this.scenario!.boat)),
+    )
     this.wake.reset()
     this.forces = this.dynamics.computeForces(
       this.boat,
@@ -332,8 +341,9 @@ export class ReplayScene implements Scene {
     const meta = this.hud.querySelector<HTMLElement>('[data-field="replay-meta"]')
     const toggle = this.hud.querySelector<HTMLButtonElement>("[data-action='replay-toggle']")
     const progressMs = this.frameIndex * this.replay.fixedDt * 1000
+    const totalMs = replaySimTimeMs(this.replay)
     if (meta) {
-      meta.textContent = `${formatRunTimeMs(progressMs)} / ${formatRunTimeMs(this.replay.timeMs)} · ${formatReplaySpeed(this.replaySpeed)}${this.finished ? " · end" : ""}`
+      meta.textContent = `${formatRunTimeMs(progressMs)} / ${formatRunTimeMs(totalMs)} sim · ${formatReplaySpeed(this.replaySpeed)}${this.finished ? " · end" : ""}`
     }
     if (toggle) {
       toggle.textContent = this.paused || this.finished ? "Play" : "Pause"

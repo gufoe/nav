@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
-import type { ReplayPayload } from "../../shared/replay.ts"
+import { isReplayPayload, replaySimTimeMs, type ReplayPayload } from "../../shared/replay.ts"
 import { getScoreReplay, insertScore, listScores } from "./db.ts"
 
 const app = new Hono()
@@ -90,29 +90,20 @@ app.post("/api/scores", async (c) => {
   if (replay.scenarioId !== levelId.trim()) {
     return c.json({ error: "replay scenario mismatch" }, 400)
   }
+  const simTimeMs = replaySimTimeMs(replay)
+  if (Math.abs(timeMs - simTimeMs) > 1) {
+    return c.json({ error: "timeMs must match simulation time (frames × fixedDt)" }, 400)
+  }
 
   const id = insertScore({
     levelId: levelId.trim(),
     playerName: playerName.trim(),
-    timeMs,
+    timeMs: simTimeMs,
     boatId: boatId.trim(),
     replay,
   })
   return c.json({ id }, 201)
 })
-
-function isReplayPayload(value: unknown): value is ReplayPayload {
-  if (!value || typeof value !== "object") return false
-  const r = value as ReplayPayload
-  return (
-    r.v === 1 &&
-    typeof r.scenarioId === "string" &&
-    typeof r.boatId === "string" &&
-    typeof r.timeMs === "number" &&
-    typeof r.fixedDt === "number" &&
-    Array.isArray(r.frames)
-  )
-}
 
 const port = Number(process.env.PORT ?? 3001)
 serve({ fetch: app.fetch, port }, () => {

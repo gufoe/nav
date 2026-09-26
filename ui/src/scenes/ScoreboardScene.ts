@@ -149,7 +149,7 @@ export class ScoreboardScene implements Scene {
           <tr>
             <th>#</th>
             <th>Player</th>
-            <th>Time</th>
+            <th>Sim time</th>
             <th></th>
           </tr>
         </thead>

@@ -38,7 +38,8 @@ import {
 } from "../recording/playerName.ts"
 import { submitScore } from "../api/scores.ts"
 import { formatRunTimeMs } from "../util/formatTime.ts"
-import type { ReplayPayload } from "../../../shared/replay.ts"
+import type { ReplayPayloadV2 } from "../../../shared/replay.ts"
+import { snapshotControls } from "../recording/replayPhysics.ts"
 
 const WAKE_MAX_AGE_S = 90
 
@@ -69,7 +70,7 @@ export class SimScene implements Scene {
   private readonly checkpoints: readonly ParkingCheckpoint[]
   private readonly checkpointProgress: CheckpointProgress
   private readonly recorder: GameplayRecorder
-  private pendingReplay: ReplayPayload | null = null
+  private pendingReplay: ReplayPayloadV2 | null = null
   private scoreSubmitting = false
   private scoreSaved = false
   private scoreError: string | null = null
@@ -337,6 +338,7 @@ export class SimScene implements Scene {
       },
     )
 
+    this.recorder.reset(this.boat)
     this.game.uiRoot.appendChild(hud)
     this.hud = hud
     this.snapDockCamera(ctx)
@@ -402,9 +404,10 @@ export class SimScene implements Scene {
   /** Deterministic fixed-step physics; rendering interpolation is not needed yet. */
   fixedUpdate(ctx: FrameContext): void {
     if (this.paused) return
+    const controls = snapshotControls(this.helm.controls)
     const result = this.dynamics.step(
       this.boat,
-      this.helm.controls,
+      controls,
       environmentFromScenario(this.scenario.environment),
       ctx.time.fixedDt,
     )
@@ -417,11 +420,12 @@ export class SimScene implements Scene {
       result.forces.groundVelocity.x,
       result.forces.groundVelocity.y,
     )
+    if (!this.checkpointProgress.isComplete) {
+      this.recorder.recordStep(controls)
+    }
     if (tickResult.levelJustPassed) {
       this.pendingReplay = this.recorder.finish()
       this.paused = true
-    } else if (!this.checkpointProgress.isComplete) {
-      this.recorder.recordStep(ctx.time.fixedDt, this.helm.controls)
     }
 
     const env = environmentFromScenario(this.scenario.environment)
@@ -522,7 +526,7 @@ export class SimScene implements Scene {
     this.helm.reset()
     this.wake.reset()
     this.checkpointProgress.reset()
-    this.recorder.reset()
+    this.recorder.reset(this.boat)
     this.pendingReplay = null
     this.scoreSubmitting = false
     this.scoreSaved = false
@@ -761,7 +765,7 @@ export class SimScene implements Scene {
     const timeEl = this.hud.querySelector<HTMLElement>('[data-field="level-pass-time"]')
     const replay = this.pendingReplay
     if (timeEl && replay) {
-      timeEl.textContent = `Time: ${formatRunTimeMs(replay.timeMs)}`
+      timeEl.textContent = `Sim time: ${formatRunTimeMs(replay.timeMs)}`
     }
     const errEl = this.hud.querySelector<HTMLElement>('[data-field="score-error"]')
     const savedEl = this.hud.querySelector<HTMLElement>('[data-field="score-saved"]')
