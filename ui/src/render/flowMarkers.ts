@@ -4,8 +4,14 @@ import {
   flowMarkerDriftState,
   flowMarkerPosition,
 } from "./environmentField.ts"
+import { visibleWorldBounds } from "./worldViewBounds.ts"
 
 export interface FlowMarkerView {
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+  /** Max distance from world center to a visible edge — swell reach. */
   halfW: number
   halfH: number
 }
@@ -13,10 +19,29 @@ export interface FlowMarkerView {
 export function viewExtents(
   ctx: FrameContext,
   pixelsPerMeter: number,
+  worldCenterX = 0,
+  worldCenterY = 0,
+  screenCenterX?: number,
+  screenCenterY?: number,
 ): FlowMarkerView {
+  const sx = screenCenterX ?? ctx.width / 2
+  const sy = screenCenterY ?? ctx.height / 2
+  const { minX, maxX, minY, maxY } = visibleWorldBounds(
+    ctx.width,
+    ctx.height,
+    pixelsPerMeter,
+    worldCenterX,
+    worldCenterY,
+    sx,
+    sy,
+  )
   return {
-    halfW: ctx.width / (2 * pixelsPerMeter),
-    halfH: ctx.height / (2 * pixelsPerMeter),
+    minX,
+    maxX,
+    minY,
+    maxY,
+    halfW: Math.max(worldCenterX - minX, maxX - worldCenterX),
+    halfH: Math.max(worldCenterY - minY, maxY - worldCenterY),
   }
 }
 
@@ -56,7 +81,13 @@ export function forEachFlowMarker(
         salt,
         flowDir: flow.headingTo,
       })
-      if (Math.abs(cx) > halfW + margin || Math.abs(cy) > halfH + margin) {
+      const { minX, maxX, minY, maxY } = view
+      if (
+        cx < minX - margin ||
+        cx > maxX + margin ||
+        cy < minY - margin ||
+        cy > maxY + margin
+      ) {
         continue
       }
       visit(cx, cy, sux, suy, sizeScale)

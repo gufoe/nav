@@ -23,6 +23,10 @@ import { WindViz } from "./WindViz.ts"
 export class EnvironmentViz {
   private readonly ctx: CanvasRenderingContext2D
   private pixelsPerMeter: number
+  private worldCenterX = 0
+  private worldCenterY = 0
+  private screenCenterX: number | null = null
+  private screenCenterY: number | null = null
   private readonly windViz: WindViz
 
   constructor(ctx: CanvasRenderingContext2D, pixelsPerMeter = 12) {
@@ -31,9 +35,25 @@ export class EnvironmentViz {
     this.windViz = new WindViz(ctx, pixelsPerMeter)
   }
 
-  setPixelsPerMeter(pixelsPerMeter: number): void {
+  setView(
+    pixelsPerMeter: number,
+    centerX: number,
+    centerY: number,
+    screenCenterX?: number,
+    screenCenterY?: number,
+  ): void {
     this.pixelsPerMeter = pixelsPerMeter
-    this.windViz.setPixelsPerMeter(pixelsPerMeter)
+    this.worldCenterX = centerX
+    this.worldCenterY = centerY
+    this.screenCenterX = screenCenterX ?? null
+    this.screenCenterY = screenCenterY ?? null
+    this.windViz.setView(
+      pixelsPerMeter,
+      centerX,
+      centerY,
+      screenCenterX,
+      screenCenterY,
+    )
   }
 
   draw(ctx: FrameContext, env: Environment, elapsed: number): void {
@@ -43,8 +63,15 @@ export class EnvironmentViz {
     if (wind) this.windViz.draw(ctx, wind, elapsed)
   }
 
-  private viewExtents(ctx: FrameContext): { halfW: number; halfH: number } {
-    return viewExtents(ctx, this.pixelsPerMeter)
+  private viewExtents(ctx: FrameContext): ReturnType<typeof viewExtents> {
+    return viewExtents(
+      ctx,
+      this.pixelsPerMeter,
+      this.worldCenterX,
+      this.worldCenterY,
+      this.screenCenterX ?? undefined,
+      this.screenCenterY ?? undefined,
+    )
   }
 
   private drawWaves(ctx: FrameContext, env: Environment, t: number): void {
@@ -158,7 +185,7 @@ export class EnvironmentViz {
       len,
       0x63,
       (cx, cy, ux, uy, scale) => {
-        drawFlowArrow(c, this.pixelsPerMeter, cx, cy, ux, uy, len * scale)
+        drawFlowArrow(c, this.pixelsPerMeter, cx, cy, -uy, ux, len * scale)
       },
     )
 

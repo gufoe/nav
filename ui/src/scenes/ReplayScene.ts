@@ -249,7 +249,13 @@ export class ReplayScene implements Scene {
       cam.viewFrame.cx,
       cam.viewFrame.cy,
     )
-    envViz.setPixelsPerMeter(cam.pixelsPerMeter)
+    envViz.setView(
+      cam.pixelsPerMeter,
+      cam.centerX,
+      cam.centerY,
+      cam.viewFrame.cx,
+      cam.viewFrame.cy,
+    )
 
     renderer.clear(ctx.width, ctx.height)
     renderer.withWorld(ctx, () => {
@@ -330,7 +336,13 @@ export class ReplayScene implements Scene {
       this.dockCamera.viewFrame.cx,
       this.dockCamera.viewFrame.cy,
     )
-    this.envViz?.setPixelsPerMeter(this.dockCamera.pixelsPerMeter)
+    this.envViz?.setView(
+      this.dockCamera.pixelsPerMeter,
+      this.dockCamera.centerX,
+      this.dockCamera.centerY,
+      this.dockCamera.viewFrame.cx,
+      this.dockCamera.viewFrame.cy,
+    )
   }
 
   private restartPlayback(): void {

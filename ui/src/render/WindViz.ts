@@ -8,14 +8,28 @@ import { forEachFlowMarker, viewExtents } from "./flowMarkers.ts"
 export class WindViz {
   private readonly ctx: CanvasRenderingContext2D
   private pixelsPerMeter: number
+  private worldCenterX = 0
+  private worldCenterY = 0
+  private screenCenterX: number | null = null
+  private screenCenterY: number | null = null
 
   constructor(ctx: CanvasRenderingContext2D, pixelsPerMeter = 12) {
     this.ctx = ctx
     this.pixelsPerMeter = pixelsPerMeter
   }
 
-  setPixelsPerMeter(pixelsPerMeter: number): void {
+  setView(
+    pixelsPerMeter: number,
+    centerX: number,
+    centerY: number,
+    screenCenterX?: number,
+    screenCenterY?: number,
+  ): void {
     this.pixelsPerMeter = pixelsPerMeter
+    this.worldCenterX = centerX
+    this.worldCenterY = centerY
+    this.screenCenterX = screenCenterX ?? null
+    this.screenCenterY = screenCenterY ?? null
   }
 
   draw(ctx: FrameContext, flow: WindFlow, elapsed: number): void {
@@ -33,7 +47,14 @@ export class WindViz {
     c.lineJoin = "round"
 
     forEachFlowMarker(
-      viewExtents(ctx, this.pixelsPerMeter),
+      viewExtents(
+        ctx,
+        this.pixelsPerMeter,
+        this.worldCenterX,
+        this.worldCenterY,
+        this.screenCenterX ?? undefined,
+        this.screenCenterY ?? undefined,
+      ),
       flow,
       spacing,
       driftSpeed,

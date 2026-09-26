@@ -489,7 +489,13 @@ export class SimScene implements Scene {
       cam.viewFrame.cx,
       cam.viewFrame.cy,
     )
-    this.envViz?.setPixelsPerMeter(cam.pixelsPerMeter)
+    this.envViz?.setView(
+      cam.pixelsPerMeter,
+      cam.centerX,
+      cam.centerY,
+      cam.viewFrame.cx,
+      cam.viewFrame.cy,
+    )
   }
 
   exit(): void {

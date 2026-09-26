@@ -1,5 +1,6 @@
 import type { FrameContext } from "../core/Scene.ts"
 import { boatHullLocalOutline } from "./boatHullOutline.ts"
+import { visibleWorldBounds } from "./worldViewBounds.ts"
 
 /** Lightweight canvas helpers. World units are meters. */
 export class CanvasRenderer {
@@ -47,23 +48,32 @@ export class CanvasRenderer {
 
   drawGrid(ctx: FrameContext, spacingMeters = 5): void {
     const { ctx: c, width, height } = ctx
-    const halfW = width / (2 * this.pixelsPerMeter)
-    const halfH = height / (2 * this.pixelsPerMeter)
+    const sx = this.screenCenterX ?? width / 2
+    const sy = this.screenCenterY ?? height / 2
+    const { minX, maxX, minY, maxY } = visibleWorldBounds(
+      width,
+      height,
+      this.pixelsPerMeter,
+      this.worldCenterX,
+      this.worldCenterY,
+      sx,
+      sy,
+    )
 
     c.strokeStyle = "rgba(120, 160, 180, 0.15)"
     c.lineWidth = 1 / this.pixelsPerMeter
     c.beginPath()
 
-    const startX = Math.floor(-halfW / spacingMeters) * spacingMeters
-    const startY = Math.floor(-halfH / spacingMeters) * spacingMeters
+    const startX = Math.floor(minX / spacingMeters) * spacingMeters
+    const startY = Math.floor(minY / spacingMeters) * spacingMeters
 
-    for (let x = startX; x <= halfW; x += spacingMeters) {
-      c.moveTo(x, -halfH)
-      c.lineTo(x, halfH)
+    for (let x = startX; x <= maxX; x += spacingMeters) {
+      c.moveTo(x, minY)
+      c.lineTo(x, maxY)
     }
-    for (let y = startY; y <= halfH; y += spacingMeters) {
-      c.moveTo(-halfW, y)
-      c.lineTo(halfW, y)
+    for (let y = startY; y <= maxY; y += spacingMeters) {
+      c.moveTo(minX, y)
+      c.lineTo(maxX, y)
     }
     c.stroke()
   }
