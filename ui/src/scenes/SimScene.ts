@@ -8,7 +8,7 @@ import { MenuScene } from "./MenuScene.ts"
 import { ScoreboardScene } from "./ScoreboardScene.ts"
 import { Helm } from "../sim/Helm.ts"
 import { clamp, radToDeg } from "../math/MathUtil.ts"
-import { worldDirectionToRoseDeg } from "../ui/compassRose.ts"
+import { boatHeadingDisplayDeg, worldDirectionToRoseDeg } from "../ui/compassRose.ts"
 import { formatKnots, msToKnots, toCardinal } from "../math/Units.ts"
 import { BoatDynamics, type ForceBreakdown } from "../physics/BoatDynamics.ts"
 import { boatById } from "../physics/boats/index.ts"
@@ -676,7 +676,7 @@ export class SimScene implements Scene {
     set("boat", `${this.boatSpec.prototype} · ${this.boatSpec.kind}`)
     set("sog", `${msToKnots(sog).toFixed(2)} kn`)
     set("stw", `${msToKnots(speedThroughWater(boat)).toFixed(2)} kn`)
-    set("heading", `${normalizeDegrees(radToDeg(boat.heading))}°`)
+    set("heading", `${boatHeadingDisplayDeg(boat.heading)}°`)
     set("drift", `${radToDeg(driftAngle(boat)).toFixed(0)}°`)
     set("rot", `${radToDeg(boat.r).toFixed(1)} °/s`)
     const helmAuto = this.helm.autoCenterRudder ? "" : " · latch"
@@ -1023,8 +1023,4 @@ function describeThrottle(throttle: number): string {
   const pct = Math.round(Math.abs(clamp(throttle, -1, 1)) * 100)
   if (pct === 0) return "neutral"
   return `${pct}% ${throttle > 0 ? "ahead" : "astern"}`
-}
-
-function normalizeDegrees(degrees: number): number {
-  return (Math.round(degrees) + 360) % 360
 }

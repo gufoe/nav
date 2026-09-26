@@ -2,7 +2,7 @@ import { describe, test } from "node:test"
 import assert from "node:assert/strict"
 
 import { degToRad } from "../../math/MathUtil.ts"
-import { worldDirectionToRoseDeg } from "../compassRose.ts"
+import { boatHeadingDisplayDeg, worldDirectionToRoseDeg } from "../compassRose.ts"
 
 describe("compassRose", () => {
   test("world north points up on the rose", () => {
@@ -16,5 +16,17 @@ describe("compassRose", () => {
   test("matches SimScene setArrow formula", () => {
     const world = degToRad(35)
     assert.ok(Math.abs(worldDirectionToRoseDeg(world) - (90 - (35))) < 1e-9)
+  })
+
+  test("boat HUD matches rose (0=north, 90=east, 180=south)", () => {
+    assert.equal(boatHeadingDisplayDeg(degToRad(90)), 0)
+    assert.equal(boatHeadingDisplayDeg(degToRad(0)), 90)
+    assert.equal(boatHeadingDisplayDeg(degToRad(-90)), 180)
+  })
+
+  test("starboard turn increases displayed heading", () => {
+    const north = degToRad(90)
+    const starboard = degToRad(75)
+    assert.ok(boatHeadingDisplayDeg(starboard) > boatHeadingDisplayDeg(north))
   })
 })

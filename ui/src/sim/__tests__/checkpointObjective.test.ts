@@ -33,7 +33,7 @@ describe("checkpointObjective", () => {
         label: "Med — stern-to (west)",
         technique: "",
       }),
-      "180° · stern-to (bow east)",
+      "270° · stern-to",
     )
   })
 })

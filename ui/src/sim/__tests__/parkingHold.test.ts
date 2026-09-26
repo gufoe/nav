@@ -19,9 +19,9 @@ describe("parkingHold", () => {
   })
 
   test("heading must match slot when target heading is provided", () => {
-    const aligned = createBoatState({ u: 0.1, v: 0, r: 0, heading: degToRad(-90) })
-    const skewed = createBoatState({ u: 0.1, v: 0, r: 0, heading: degToRad(-50) })
-    const target = degToRad(-90)
+    const aligned = createBoatState({ u: 0.1, v: 0, r: 0, heading: degToRad(90) })
+    const skewed = createBoatState({ u: 0.1, v: 0, r: 0, heading: degToRad(50) })
+    const target = degToRad(90)
     assert.equal(isBoatMeetingHold(aligned, 0.1, 0, BERTH_HOLD, target), true)
     assert.equal(isBoatMeetingHold(skewed, 0.1, 0, BERTH_HOLD, target), false)
   })

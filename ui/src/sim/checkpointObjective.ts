@@ -1,4 +1,5 @@
 import { radToDeg } from "../math/MathUtil.ts"
+import { boatHeadingDisplayDeg } from "../ui/compassRose.ts"
 import { msToKnots } from "../math/Units.ts"
 import type { ParkingCheckpoint } from "./checkpoints.ts"
 import type { HoldCriteria } from "./parkingHold.ts"
@@ -9,10 +10,6 @@ export interface ObjectiveTargets {
   place: string
   speed: string
   bearing: string
-}
-
-function normalizeDegrees(degrees: number): number {
-  return (Math.round(degrees) + 360) % 360
 }
 
 /** Short place name for the objective panel (not the full map label). */
@@ -48,9 +45,13 @@ export function objectiveBearingLabel(checkpoint: ParkingCheckpoint): string {
   if (isAmericanParallelCheckpoint(checkpoint)) {
     return "0° · S→N along finger"
   }
-  const deg = normalizeDegrees(radToDeg(checkpoint.heading))
-  if (deg === 180) {
-    return `${deg}° · stern-to (bow east)`
+  if (/stern-to|stern to/i.test(checkpoint.label)) {
+    const deg = boatHeadingDisplayDeg(checkpoint.heading)
+    return `${deg}° · stern-to`
+  }
+  const deg = boatHeadingDisplayDeg(checkpoint.heading)
+  if (deg === 90) {
+    return `${deg}° · bow east`
   }
   return `${deg}° heading`
 }

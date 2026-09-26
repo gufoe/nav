@@ -31,7 +31,7 @@ describe("slipPositions", () => {
   })
 
   test("standard slip styles use canonical headings", () => {
-    assert.equal(expectedHeadingDeg("american-parallel", FINGER), -90)
+    assert.equal(expectedHeadingDeg("american-parallel", FINGER), 90)
     assert.equal(expectedHeadingDeg("med-stern-to", FINGER), 180)
     assert.equal(expectedHeadingDeg("med-bow-to", FINGER), 180)
 
@@ -41,7 +41,7 @@ describe("slipPositions", () => {
 
     assert.equal(parallel.length, SLIP_ENVELOPE.length)
     assert.equal(stern.width, SLIP_ENVELOPE.width)
-    assert.ok(Math.abs(parallel.heading - degToRad(-90)) < 0.001)
+    assert.ok(Math.abs(parallel.heading - degToRad(90)) < 0.001)
     assert.ok(Math.abs(Math.abs(stern.heading) - Math.PI) < 0.001)
     assert.ok(Math.abs(Math.abs(bow.heading) - Math.PI) < 0.001)
   })

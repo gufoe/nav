@@ -11,7 +11,7 @@ import {
 import { CHECKPOINTS_PER_LEVEL } from "../parkingZone.ts"
 import { degToRad } from "../../math/MathUtil.ts"
 
-const CANONICAL_HEADINGS = new Set([-90, 0, 180])
+const CANONICAL_HEADINGS = new Set([90, 180])
 
 function headingDeg(h: number): number {
   const d = (h * 180) / Math.PI
@@ -55,7 +55,7 @@ describe("checkpoint layouts", () => {
     assert.match(holds[2]!.label, /stern-to.*west/i)
     assert.equal(holds[0]!.holdProfile, "approach")
     assert.equal(holds[1]!.holdProfile, "berth")
-    assert.ok(Math.abs(holds[0]!.heading - degToRad(-90)) < 0.01)
+    assert.ok(Math.abs(holds[0]!.heading - degToRad(90)) < 0.01)
     assert.ok(holds[0]!.position.y < holds[1]!.position.y)
   })
 
@@ -86,8 +86,8 @@ describe("checkpoint layouts", () => {
       SCENARIOS.find((s) => s.id === "basics-chop")!,
     )
     assert.match(holds[2]!.label, /stern-to/i)
-    assert.equal(headingDeg(holds[0]!.heading), -90)
-    assert.equal(headingDeg(holds[1]!.heading), -90)
+    assert.equal(headingDeg(holds[0]!.heading), 90)
+    assert.equal(headingDeg(holds[1]!.heading), 90)
     assert.equal(headingDeg(holds[2]!.heading), 180)
   })
 })

@@ -79,9 +79,13 @@ function centerOffFace(face: Vec2, normal: Vec2, distance: number): Vec2 {
   return Vec2.from(face.x + normal.x * distance, face.y + normal.y * distance)
 }
 
-/** Same as the finger: south → north (bow north on the default layout). */
-function parallelHeadingDeg(dock: Dock): number {
-  return radToDeg(dock.heading)
+/**
+ * American alongside on the east face: bow north, stern south (world +y = north).
+ * Finger deck uses {@link Dock.heading} −90° (local +x toward south); boat ψ = +90°.
+ */
+function americanParallelHeadingDeg(dock: Dock): number {
+  const dockDeg = radToDeg(dock.heading)
+  return dockDeg + 180
 }
 
 /** American: parallel to the finger, outside berth (floating slip). */
@@ -100,7 +104,7 @@ export function americanParallelSlip(
   return slipZone(
     center.x,
     center.y,
-    parallelHeadingDeg(dock),
+    americanParallelHeadingDeg(dock),
     label,
     technique,
   )
@@ -180,7 +184,7 @@ export function slipForStyle(
 export function expectedHeadingDeg(style: SlipStyle, dock: Dock): number {
   switch (style) {
     case "american-parallel":
-      return parallelHeadingDeg(dock)
+      return americanParallelHeadingDeg(dock)
     case "med-stern-to":
     case "english-stern-to":
       return 180
