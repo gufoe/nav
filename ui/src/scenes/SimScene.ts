@@ -43,6 +43,7 @@ import { submitScore } from "../api/scores.ts"
 import { formatRunTimeMs } from "../util/formatTime.ts"
 import type { ReplayPayloadV2 } from "../../../shared/replay.ts"
 import { snapshotControls } from "../recording/replayPhysics.ts"
+import { TouchControls } from "../ui/TouchControls.ts"
 
 const WAKE_MAX_AGE_S = 90
 
@@ -61,6 +62,7 @@ export class SimScene implements Scene {
   private readonly dockCamera = new DockCamera()
   private dockCameraSnapPending = false
   private hud: HTMLElement | null = null
+  private touchControls: TouchControls | null = null
 
   private boat: BoatState
   private forces: ForceBreakdown
@@ -388,11 +390,12 @@ export class SimScene implements Scene {
         </div>
       </div>
       <footer class="hud-bar conditions__note conditions__note--keys" aria-label="Keyboard shortcuts">
-        <kbd>W</kbd><kbd>S</kbd> throttle · <kbd>X</kbd> neutral · <kbd>M</kbd> engine ·
-        <kbd>A</kbd><kbd>D</kbd> helm · <kbd>C</kbd> midships · <kbd>K</kbd> auto-center ·
-        <kbd>P</kbd> pause · <kbd>R</kbd> reset · <kbd>F</kbd> instrumentation ·
-        <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> speed (<span data-field="sim-speed"></span>) · <kbd>Esc</kbd> menu
-        <button class="hud__help-link" type="button" data-action="help"><kbd>H</kbd> help</button>
+        <span><kbd>W</kbd><kbd>S</kbd> throttle</span>
+        <span><kbd>A</kbd><kbd>D</kbd> steer</span>
+        <span><kbd>X</kbd> neutral</span>
+        <span><kbd>P</kbd> pause</span>
+        <span><kbd>R</kbd> reset</span>
+        <button class="hud__help-link" type="button" data-action="help">All controls <kbd>H</kbd></button>
       </footer>
     `
     hud.querySelector<HTMLButtonElement>("[data-action='help']")?.addEventListener("click", () => {
@@ -437,6 +440,7 @@ export class SimScene implements Scene {
     this.recorder.reset(this.boat)
     this.game.uiRoot.appendChild(hud)
     this.hud = hud
+    this.touchControls = new TouchControls(this.game.uiRoot, this.game.input)
     this.snapDockCamera(ctx)
     this.refreshHud()
   }
@@ -465,6 +469,8 @@ export class SimScene implements Scene {
   }
 
   exit(): void {
+    this.touchControls?.destroy()
+    this.touchControls = null
     this.game.time.fixedDt = this.previousFixedDt
     this.game.time.scale = this.previousTimeScale
     this.hud?.remove()

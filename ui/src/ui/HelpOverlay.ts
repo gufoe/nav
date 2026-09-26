@@ -16,23 +16,27 @@ export class HelpOverlay {
       <div class="help-overlay__backdrop" data-action="close"></div>
       <div class="help-overlay__panel">
         <header class="help-overlay__header">
-          <h2 class="help-overlay__title" id="help-title">Controls &amp; hotkeys</h2>
+          <div>
+            <p class="help-overlay__eyebrow">Docking reference</p>
+            <h2 class="help-overlay__title" id="help-title">Controls</h2>
+          </div>
           <button class="help-overlay__close btn" type="button" data-action="close" aria-label="Close help">
             Esc
           </button>
         </header>
+        <p class="help-overlay__intro">Use the paired keys below, or the on-screen helm on touch devices. Hold steering and throttle controls; the throttle lever stays where you leave it.</p>
         <dl class="help-overlay__list">
           ${HELP_ENTRIES.map(
             ({ keys, description }) => `
               <div class="help-overlay__row">
-                <dt class="help-overlay__keys">${keys}</dt>
+                <dt class="help-overlay__keys">${keys.split(" / ").map((key) => `<kbd>${key}</kbd>`).join("<span aria-hidden=\"true\">or</span>")}</dt>
                 <dd class="help-overlay__desc">${description}</dd>
               </div>
             `,
           ).join("")}
         </dl>
         <p class="help-overlay__footer">
-          Press <kbd>H</kbd>, <kbd>?</kbd>, or <kbd>F1</kbd> to toggle this panel.
+          Keyboard: <kbd>H</kbd>, <kbd>?</kbd>, or <kbd>F1</kbd>. Touch: use this Help button anytime.
         </p>
       </div>
     `

@@ -144,6 +144,8 @@ export class Input {
   private readonly down = new Set<string>()
   private readonly pressed = new Set<string>()
   private readonly released = new Set<string>()
+  private readonly virtualDown = new Set<Action>()
+  private readonly virtualPressed = new Set<Action>()
 
   private attached = false
 
@@ -173,6 +175,7 @@ export class Input {
 
   private readonly onBlur = (): void => {
     this.down.clear()
+    this.virtualDown.clear()
   }
 
   attach(target: Window = window): void {
@@ -192,6 +195,8 @@ export class Input {
     this.down.clear()
     this.pressed.clear()
     this.released.clear()
+    this.virtualDown.clear()
+    this.virtualPressed.clear()
   }
 
   /**
@@ -201,6 +206,7 @@ export class Input {
   endFrame(): void {
     this.pressed.clear()
     this.released.clear()
+    this.virtualPressed.clear()
   }
 
   isDown(code: string): boolean {
@@ -216,20 +222,34 @@ export class Input {
   }
 
   isActionDown(action: Action): boolean {
-    return BINDINGS[action].some((code) => this.down.has(code))
+    return this.virtualDown.has(action) || BINDINGS[action].some((code) => this.down.has(code))
   }
 
   wasActionPressed(action: Action): boolean {
+    if (this.virtualPressed.has(action)) return true
     if (action === "help" && this.pressed.has(QUESTION_MARK_CODE)) return true
     return BINDINGS[action].some((code) => this.pressed.has(code))
   }
 
   /** Drop edge-triggered state so a global overlay can swallow a binding. */
   consumeAction(action: Action): void {
+    this.virtualPressed.delete(action)
     for (const code of BINDINGS[action]) {
       this.pressed.delete(code)
     }
     if (action === "help") this.pressed.delete(QUESTION_MARK_CODE)
+  }
+
+  /** Feed pointer controls through the same action snapshot as keyboard input. */
+  pressAction(action: Action): void {
+    if (!this.virtualDown.has(action)) {
+      this.virtualDown.add(action)
+      this.virtualPressed.add(action)
+    }
+  }
+
+  releaseAction(action: Action): void {
+    this.virtualDown.delete(action)
   }
 }
 
