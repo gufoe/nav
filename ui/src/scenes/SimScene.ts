@@ -530,6 +530,7 @@ export class SimScene implements Scene {
   /** Deterministic fixed-step physics; rendering interpolation is not needed yet. */
   fixedUpdate(ctx: FrameContext): void {
     if (this.paused || this.gameOver) return
+    const stateBeforeStep = cloneBoatState(this.boat)
     const controls = snapshotControls(this.helm.controls)
     const result = this.dynamics.step(
       this.boat,
@@ -561,6 +562,9 @@ export class SimScene implements Scene {
       this.runTimerActive = true
     }
     if (this.runTimerActive && !this.checkpointProgress.isComplete) {
+      if (!this.recorder.hasRecording) {
+        this.recorder.setInitial(stateBeforeStep)
+      }
       this.recorder.recordStep(controls)
     }
     if (tickResult.levelJustPassed) {

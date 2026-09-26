@@ -23,6 +23,7 @@ describe("replay determinism", () => {
 
     const frames: ReturnType<typeof snapshotControls>[] = []
     for (let i = 0; i < 240; i++) {
+      const before = cloneBoatState(live)
       const controls = createControls({
         rudder: Math.sin(i / 40) * 0.6,
         throttle: i < 120 ? 0.35 : -0.2,
@@ -32,6 +33,7 @@ describe("replay determinism", () => {
       })
       frames.push(snapshotControls(controls))
       live = dynamics.step(live, controls, env, PHYSICS_DT).state
+      if (!recorder.hasRecording) recorder.setInitial(before)
       recorder.recordStep(controls)
     }
 
@@ -48,14 +50,52 @@ describe("replay determinism", () => {
     assert.deepEqual(replayed, live)
   })
 
-  test("recorder captures initial actuator state after reset", () => {
-    const start = createBoatState({ x: 1, y: 2, heading: 0.1, rpm: 50, rudderAngle: 0.05 })
+  test("recorder captures initial pose at first recorded step", () => {
+    const beforeStep = createBoatState({ x: 1, y: 2, heading: 0.1, rpm: 50, rudderAngle: 0.05 })
     const recorder = new GameplayRecorder("basics-calm", DEFAULT_YACHT.id)
-    recorder.reset(start)
+    recorder.reset(beforeStep)
+    recorder.setInitial(beforeStep)
     recorder.recordStep(createControls())
     const payload = recorder.finish()
     assert.equal(payload.v, 2)
     assert.equal(payload.initial[0], 1)
     assert.equal(payload.initial[6], 50)
+  })
+
+  test("delayed recording matches live trajectory from first recorded step", () => {
+    const scenario = SCENARIOS[0]!
+    const env = environmentFromScenario(scenario.environment)
+    const dynamics = new BoatDynamics(DEFAULT_YACHT)
+    let live = cloneBoatState(scenario.boat)
+
+    const recorder = new GameplayRecorder(scenario.id, DEFAULT_YACHT.id)
+    recorder.reset(live)
+
+    const warmupSteps = 48
+    const recordedSteps = 200
+    for (let i = 0; i < warmupSteps + recordedSteps; i++) {
+      const before = cloneBoatState(live)
+      const controls = createControls({
+        rudder: 0.2,
+        throttle: i >= warmupSteps ? 0.4 : 0,
+        engineEngaged: true,
+      })
+      live = dynamics.step(live, controls, env, PHYSICS_DT).state
+      if (i >= warmupSteps) {
+        if (!recorder.hasRecording) recorder.setInitial(before)
+        recorder.recordStep(controls)
+      }
+    }
+
+    const payload = recorder.finish()
+    assert.equal(payload.frames.length, recordedSteps)
+
+    const replayDynamics = new BoatDynamics(DEFAULT_YACHT)
+    let replayed = resolveReplayInitial(payload, cloneBoatState(scenario.boat))
+    for (const frame of payload.frames) {
+      replayed = stepReplay(replayDynamics, replayed, frame, env, payload.fixedDt).state
+    }
+
+    assert.deepEqual(replayed, live)
   })
 })

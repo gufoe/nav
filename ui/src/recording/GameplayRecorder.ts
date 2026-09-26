@@ -22,9 +22,22 @@ export class GameplayRecorder {
   }
 
   /** Call whenever the run restarts (scenario enter or R reset). */
-  reset(startBoat: BoatState): void {
+  reset(_startBoat: BoatState): void {
     this.frames = []
-    this.initial = stateToReplay(startBoat)
+    this.initial = null
+  }
+
+  get hasRecording(): boolean {
+    return this.frames.length > 0
+  }
+
+  /**
+   * Pose/actuators immediately before the first recorded physics step.
+   * Must match the state replay integrates from when recording starts mid-run.
+   */
+  setInitial(stateBeforeFirstStep: BoatState): void {
+    if (this.initial !== null) return
+    this.initial = stateToReplay(stateBeforeFirstStep)
   }
 
   /** One entry per physics step — controls that were fed into {@link BoatDynamics.step}. */
@@ -38,8 +51,8 @@ export class GameplayRecorder {
   }
 
   finish(): ReplayPayloadV2 {
-    if (!this.initial) {
-      throw new Error("GameplayRecorder.reset() was never called")
+    if (!this.initial || this.frames.length === 0) {
+      throw new Error("GameplayRecorder has no recorded run to finish")
     }
     const fixedDt = PHYSICS_DT
     return {
