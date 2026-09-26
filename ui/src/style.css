@@ -479,59 +479,228 @@ body {
   width: 100%;
 }
 
+.menu.scoreboard {
+  justify-content: flex-start;
+  padding: 1.75rem 1rem 2.5rem;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.scoreboard__brand {
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.scoreboard__panel {
+  width: min(42rem, 100%);
+  padding: 1rem 1.1rem 1.15rem;
+  border-radius: 8px;
+  border: 1px solid rgba(106, 160, 188, 0.28);
+  background: linear-gradient(165deg, rgba(16, 38, 52, 0.92) 0%, rgba(11, 28, 40, 0.88) 100%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
 .scoreboard__filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem 1.25rem;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
   margin-bottom: 1rem;
 }
 
-.scoreboard__level {
+.scoreboard__filter {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  min-width: min(16rem, 100%);
-  font-size: 0.9rem;
+  flex: 1 1 10rem;
+  min-width: min(14rem, 100%);
+  font-size: 0.85rem;
   color: #9bb4c2;
 }
 
-.scoreboard__level select {
+.scoreboard__filter select {
   font: inherit;
-  padding: 0.4rem 0.5rem;
+  padding: 0.45rem 0.55rem;
   border-radius: 4px;
   border: 1px solid rgba(130, 180, 210, 0.35);
   background: rgba(6, 16, 24, 0.85);
   color: #e8f1f5;
 }
 
-.scoreboard__status {
+.scoreboard__refresh {
+  flex: 0 0 auto;
+  margin-bottom: 0.05rem;
+}
+
+.scoreboard__context {
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(106, 160, 188, 0.18);
+}
+
+.scoreboard__context-title {
+  margin: 0 0 0.25rem;
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #e8f1f5;
+}
+
+.scoreboard__context-boat {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  color: #8aa3b2;
+}
+
+.scoreboard__context-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
   color: #9bb4c2;
-  margin-bottom: 0.75rem;
+}
+
+.scoreboard__status {
+  min-height: 1.25rem;
+  color: #8aa3b2;
+  font-size: 0.82rem;
+  margin: 0 0 0.65rem;
+}
+
+.scoreboard__empty {
+  padding: 1.25rem 0.5rem;
+  text-align: center;
+  color: #9bb4c2;
+}
+
+.scoreboard__empty-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #8aa3b2;
 }
 
 .scoreboard__table-wrap {
   width: 100%;
-  max-width: 36rem;
-  margin-bottom: 1.25rem;
   overflow-x: auto;
 }
 
 .scoreboard__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+}
+
+.scoreboard__table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8aa3b2;
+  border-bottom: 1px solid rgba(106, 160, 188, 0.25);
 }
 
 .scoreboard__table th,
 .scoreboard__table td {
-  padding: 0.45rem 0.5rem;
-  border-bottom: 1px solid rgba(130, 180, 210, 0.15);
+  padding: 0.5rem 0.45rem;
+  border-bottom: 1px solid rgba(130, 180, 210, 0.12);
   text-align: left;
+  vertical-align: middle;
 }
 
-.scoreboard__table th:last-child,
-.scoreboard__table td:last-child {
+.scoreboard__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.scoreboard__rank {
+  font-weight: 600;
+  color: #c5d7e0;
+  white-space: nowrap;
+}
+
+.scoreboard__row--medal-1 .scoreboard__rank {
+  color: #e8c478;
+}
+
+.scoreboard__row--medal-2 .scoreboard__rank {
+  color: #c5d7e0;
+}
+
+.scoreboard__row--medal-3 .scoreboard__rank {
+  color: #c9a06a;
+}
+
+.scoreboard__row--medal-1 {
+  background: rgba(232, 196, 120, 0.06);
+}
+
+.scoreboard__row--medal-2 {
+  background: rgba(197, 215, 224, 0.04);
+}
+
+.scoreboard__row--medal-3 {
+  background: rgba(201, 160, 106, 0.05);
+}
+
+.scoreboard__row--you {
+  box-shadow: inset 3px 0 0 rgba(98, 216, 152, 0.75);
+}
+
+.scoreboard__pilot {
+  font-weight: 500;
+  color: #e8f1f5;
+}
+
+.scoreboard__you-badge {
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #b8f5d4;
+  background: rgba(98, 216, 152, 0.12);
+  border: 1px solid rgba(98, 216, 152, 0.35);
+}
+
+.scoreboard__time {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #e8f1f5;
+  white-space: nowrap;
+}
+
+.scoreboard__gap {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.82rem;
+  color: #8aa3b2;
+  white-space: nowrap;
+}
+
+.scoreboard__date {
+  font-size: 0.8rem;
+  color: #8aa3b2;
+  white-space: nowrap;
+}
+
+.scoreboard__replay {
   text-align: right;
+  white-space: nowrap;
+}
+
+.scoreboard__actions {
+  margin-top: 0.5rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .btn--small {

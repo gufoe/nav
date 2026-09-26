@@ -2,11 +2,14 @@ import type { FrameContext, Scene } from "../core/Scene.ts"
 import type { Game } from "../core/Game.ts"
 import { SCENARIOS } from "../sim/scenarios.ts"
 import { MenuScene } from "./MenuScene.ts"
+import { SimScene } from "./SimScene.ts"
 import { fetchScore, fetchScores, type ScoreListItem } from "../api/scores.ts"
 import { formatRunTimeMs } from "../util/formatTime.ts"
+import { formatScoreDate } from "../util/formatScoreDate.ts"
 import { ReplayScene } from "./ReplayScene.ts"
-import { BOAT_CATALOG } from "../physics/boats/index.ts"
-import { getSelectedBoatId } from "../core/settings.ts"
+import { BOAT_CATALOG, boatById } from "../physics/boats/index.ts"
+import { getSelectedBoatId, setSelectedBoatId } from "../core/settings.ts"
+import { readRememberedPlayerName } from "../recording/playerName.ts"
 
 export interface ScoreboardOptions {
   levelId?: string
@@ -35,32 +38,39 @@ export class ScoreboardScene implements Scene {
     const root = document.createElement("div")
     root.className = "menu scoreboard"
     root.innerHTML = `
-      <div class="menu__brand">Scoreboard</div>
-      <p class="menu__tagline">Fastest runs for each level and boat model.</p>
-      <div class="scoreboard__filters">
-        <label class="scoreboard__level">
-          <span>Level</span>
-          <select data-field="level">
-            ${SCENARIOS.map(
-              (s) =>
-                `<option value="${s.id}"${s.id === this.levelId ? " selected" : ""}>${s.name}</option>`,
-            ).join("")}
-          </select>
-        </label>
-        <label class="scoreboard__level">
-          <span>Boat</span>
-          <select data-field="boat">
-            ${BOAT_CATALOG.map(
-              (b) =>
-                `<option value="${b.id}"${b.id === this.boatId ? " selected" : ""}>${b.prototype}</option>`,
-            ).join("")}
-          </select>
-        </label>
+      <div class="menu__brand scoreboard__brand">Scoreboard</div>
+      <p class="menu__tagline">Fastest simulation times — one board per level and boat.</p>
+      <div class="scoreboard__panel">
+        <div class="scoreboard__filters">
+          <label class="scoreboard__filter">
+            <span>Level</span>
+            <select data-field="level">
+              ${SCENARIOS.map(
+                (s) =>
+                  `<option value="${s.id}"${s.id === this.levelId ? " selected" : ""}>${s.name}</option>`,
+              ).join("")}
+            </select>
+          </label>
+          <label class="scoreboard__filter">
+            <span>Boat</span>
+            <select data-field="boat">
+              ${BOAT_CATALOG.map(
+                (b) =>
+                  `<option value="${b.id}"${b.id === this.boatId ? " selected" : ""}>${b.prototype}</option>`,
+              ).join("")}
+            </select>
+          </label>
+          <button class="btn btn--small scoreboard__refresh" type="button" data-action="refresh" title="Reload scores">
+            Refresh
+          </button>
+        </div>
+        <div class="scoreboard__context" data-field="context"></div>
+        <p class="scoreboard__status" data-field="status">Loading…</p>
+        <div class="scoreboard__table-wrap" data-field="table"></div>
       </div>
-      <p class="scoreboard__status" data-field="status">Loading…</p>
-      <div class="scoreboard__table-wrap" data-field="table"></div>
-      <div class="menu__actions">
-        <button class="btn btn--primary" type="button" data-action="back">Back to menu</button>
+      <div class="menu__actions scoreboard__actions">
+        <button class="btn btn--primary" type="button" data-action="play">Play this level</button>
+        <button class="btn" type="button" data-action="back">Back to menu</button>
       </div>
     `
 
@@ -68,6 +78,7 @@ export class ScoreboardScene implements Scene {
       "change",
       (ev) => {
         this.levelId = (ev.target as HTMLSelectElement).value
+        this.refreshContext()
         void this.reload()
       },
     )
@@ -75,15 +86,23 @@ export class ScoreboardScene implements Scene {
       "change",
       (ev) => {
         this.boatId = (ev.target as HTMLSelectElement).value
+        this.refreshContext()
         void this.reload()
       },
     )
+    root.querySelector<HTMLButtonElement>("[data-action='refresh']")?.addEventListener("click", () => {
+      void this.reload()
+    })
+    root.querySelector<HTMLButtonElement>("[data-action='play']")?.addEventListener("click", () => {
+      this.playSelectedLevel()
+    })
     root.querySelector<HTMLButtonElement>("[data-action='back']")?.addEventListener("click", () => {
       this.game.setScene(new MenuScene(this.game))
     })
 
     this.game.uiRoot.appendChild(root)
     this.root = root
+    this.refreshContext()
     void this.reload()
   }
 
@@ -107,12 +126,39 @@ export class ScoreboardScene implements Scene {
     return { levelId: this.levelId, boatId: this.boatId }
   }
 
+  private selectedScenario() {
+    return SCENARIOS.find((s) => s.id === this.levelId)
+  }
+
+  private refreshContext(): void {
+    const el = this.root?.querySelector<HTMLElement>('[data-field="context"]')
+    if (!el) return
+    const scenario = this.selectedScenario()
+    const boat = boatById(this.boatId)
+    if (!scenario) {
+      el.innerHTML = ""
+      return
+    }
+    el.innerHTML = `
+      <h2 class="scoreboard__context-title">${escapeHtml(scenario.name)}</h2>
+      <p class="scoreboard__context-boat">${escapeHtml(boat.prototype)} · ${escapeHtml(boat.kind)}</p>
+      <p class="scoreboard__context-desc">${escapeHtml(scenario.description)}</p>
+    `
+  }
+
+  private playSelectedLevel(): void {
+    const scenario = this.selectedScenario()
+    if (!scenario) return
+    setSelectedBoatId(this.boatId)
+    this.game.setScene(new SimScene(this.game, scenario))
+  }
+
   private async reload(): Promise<void> {
     this.loading = true
     this.error = null
     this.renderTable()
     try {
-      this.scores = await fetchScores(this.levelId, this.boatId)
+      this.scores = await fetchScores(this.levelId, this.boatId, 50)
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Could not load scores"
       this.scores = []
@@ -128,7 +174,7 @@ export class ScoreboardScene implements Scene {
     if (!status || !tableWrap) return
 
     if (this.loading) {
-      status.textContent = "Loading…"
+      status.textContent = "Loading scores…"
       tableWrap.innerHTML = ""
       return
     }
@@ -138,32 +184,68 @@ export class ScoreboardScene implements Scene {
       return
     }
     if (this.scores.length === 0) {
-      status.textContent = "No scores yet for this level and boat — be the first."
-      tableWrap.innerHTML = ""
+      status.textContent = ""
+      tableWrap.innerHTML = `
+        <div class="scoreboard__empty">
+          <p>No runs yet for this level and boat.</p>
+          <p class="scoreboard__empty-hint">Complete the level and save your sim time to appear here.</p>
+        </div>
+      `
       return
     }
-    status.textContent = `Top ${this.scores.length} runs`
+
+    const leaderMs = this.scores[0]?.timeMs ?? 0
+    const remembered = readRememberedPlayerName().toLowerCase()
+
+    status.textContent =
+      this.scores.length >= 50
+        ? "Showing top 50 runs (sim time, fastest first)"
+        : `${this.scores.length} run${this.scores.length === 1 ? "" : "s"} · sim time, fastest first`
+
     tableWrap.innerHTML = `
       <table class="scoreboard__table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Player</th>
-            <th>Sim time</th>
-            <th></th>
+            <th scope="col">Rank</th>
+            <th scope="col">Pilot</th>
+            <th scope="col">Sim time</th>
+            <th scope="col">Gap</th>
+            <th scope="col">Date</th>
+            <th scope="col"><span class="visually-hidden">Replay</span></th>
           </tr>
         </thead>
         <tbody>
           ${this.scores
-            .map(
-              (row, index) => `
-            <tr>
-              <td>${index + 1}</td>
-              <td>${escapeHtml(row.playerName)}</td>
-              <td>${formatRunTimeMs(row.timeMs)}</td>
-              <td><button class="btn btn--small" type="button" data-replay="${row.id}">Watch</button></td>
-            </tr>`,
-            )
+            .map((row, index) => {
+              const rank = index + 1
+              const isYou =
+                remembered.length > 0 &&
+                row.playerName.trim().toLowerCase() === remembered
+              const gap =
+                index === 0
+                  ? "—"
+                  : `+${formatRunTimeMs(row.timeMs - leaderMs)}`
+              const rowClass = [
+                rank <= 3 ? `scoreboard__row--medal-${rank}` : "",
+                isYou ? "scoreboard__row--you" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")
+              return `
+            <tr class="${rowClass}">
+              <td class="scoreboard__rank">${formatRank(rank)}</td>
+              <td class="scoreboard__pilot">
+                ${escapeHtml(row.playerName)}
+                ${isYou ? '<span class="scoreboard__you-badge">you</span>' : ""}
+              </td>
+              <td class="scoreboard__time">${formatRunTimeMs(row.timeMs)}</td>
+              <td class="scoreboard__gap">${gap}</td>
+              <td class="scoreboard__date">${formatScoreDate(row.createdAt)}</td>
+              <td class="scoreboard__replay">
+                <button class="btn btn--small" type="button" data-replay="${row.id}">Watch</button>
+              </td>
+            </tr>`
+            })
             .join("")}
         </tbody>
       </table>
@@ -195,8 +277,16 @@ export class ScoreboardScene implements Scene {
         status.textContent =
           err instanceof Error ? err.message : "Could not load replay"
       }
+      this.renderTable()
     }
   }
+}
+
+function formatRank(rank: number): string {
+  if (rank === 1) return "1st"
+  if (rank === 2) return "2nd"
+  if (rank === 3) return "3rd"
+  return String(rank)
 }
 
 function escapeHtml(text: string): string {

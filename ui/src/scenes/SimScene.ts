@@ -5,6 +5,7 @@ import { CanvasRenderer } from "../render/CanvasRenderer.ts"
 import { DockCamera } from "../render/DockCamera.ts"
 import { EnvironmentViz } from "../render/EnvironmentViz.ts"
 import { MenuScene } from "./MenuScene.ts"
+import { ScoreboardScene } from "./ScoreboardScene.ts"
 import { Helm } from "../sim/Helm.ts"
 import { clamp, radToDeg } from "../math/MathUtil.ts"
 import { worldDirectionToRoseDeg } from "../ui/compassRose.ts"
@@ -309,6 +310,7 @@ export class SimScene implements Scene {
         <p class="level-pass__saved hidden" data-field="score-saved">Score saved — check the scoreboard.</p>
         <div class="level-pass__actions">
           <button class="btn btn--primary" type="button" data-action="save-score">Save score</button>
+          <button class="btn" type="button" data-action="level-scoreboard">View scoreboard</button>
           <button class="btn level-pass__btn" type="button" data-action="level-menu">
             Back to scenarios
           </button>
@@ -335,6 +337,17 @@ export class SimScene implements Scene {
       "click",
       () => {
         void this.saveScore()
+      },
+    )
+    hud.querySelector<HTMLButtonElement>("[data-action='level-scoreboard']")?.addEventListener(
+      "click",
+      () => {
+        this.game.setScene(
+          new ScoreboardScene(this.game, {
+            levelId: this.scenario.id,
+            boatId: this.pendingReplay?.boatId ?? getSelectedBoatId(),
+          }),
+        )
       },
     )
 
