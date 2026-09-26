@@ -44,6 +44,7 @@ export function openDb(path = process.env.NAV_DB_PATH ?? defaultPath): Database.
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_scores_level_time ON scores(level_id, time_ms);
+    CREATE INDEX IF NOT EXISTS idx_scores_level_boat_time ON scores(level_id, boat_id, time_ms);
   `)
   return db
 }
@@ -70,7 +71,11 @@ export function insertScore(input: {
   return Number(result.lastInsertRowid)
 }
 
-export function listScores(levelId: string, limit = 25): ScoreListItem[] {
+export function listScores(
+  levelId: string,
+  boatId: string,
+  limit = 25,
+): ScoreListItem[] {
   const conn = openDb()
   const rows = conn
     .prepare(
@@ -78,12 +83,12 @@ export function listScores(levelId: string, limit = 25): ScoreListItem[] {
     SELECT id, level_id AS levelId, player_name AS playerName, time_ms AS timeMs,
            boat_id AS boatId, created_at AS createdAt
     FROM scores
-    WHERE level_id = ?
+    WHERE level_id = ? AND boat_id = ?
     ORDER BY time_ms ASC, id ASC
     LIMIT ?
   `,
     )
-    .all(levelId, limit) as ScoreListItem[]
+    .all(levelId, boatId, limit) as ScoreListItem[]
   return rows
 }
 

@@ -63,7 +63,9 @@ export class MenuScene implements Scene {
     root.querySelector<HTMLButtonElement>("[data-action='scoreboard']")?.addEventListener(
       "click",
       () => {
-        this.game.setScene(new ScoreboardScene(this.game))
+        this.game.setScene(
+          new ScoreboardScene(this.game, { boatId: getSelectedBoatId() }),
+        )
       },
     )
 

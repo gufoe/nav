@@ -31,12 +31,16 @@ app.get("/api/scores", (c) => {
   if (!levelId?.trim()) {
     return c.json({ error: "levelId is required" }, 400)
   }
+  const boatId = c.req.query("boatId")
+  if (!boatId?.trim()) {
+    return c.json({ error: "boatId is required" }, 400)
+  }
   const limitRaw = c.req.query("limit")
   const limit = limitRaw ? Math.min(100, Math.max(1, Number(limitRaw))) : 25
   if (Number.isNaN(limit)) {
     return c.json({ error: "invalid limit" }, 400)
   }
-  return c.json({ scores: listScores(levelId.trim(), limit) })
+  return c.json({ scores: listScores(levelId.trim(), boatId.trim(), limit) })
 })
 
 app.get("/api/scores/:id", (c) => {

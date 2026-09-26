@@ -13,8 +13,16 @@ export interface ScoreDetail extends ScoreListItem {
   replay: ReplayPayload
 }
 
-export async function fetchScores(levelId: string, limit = 25): Promise<ScoreListItem[]> {
-  const params = new URLSearchParams({ levelId, limit: String(limit) })
+export async function fetchScores(
+  levelId: string,
+  boatId: string,
+  limit = 25,
+): Promise<ScoreListItem[]> {
+  const params = new URLSearchParams({
+    levelId,
+    boatId,
+    limit: String(limit),
+  })
   const res = await fetch(`/api/scores?${params}`)
   if (!res.ok) throw new Error(`Failed to load scores (${res.status})`)
   const data = (await res.json()) as { scores: ScoreListItem[] }

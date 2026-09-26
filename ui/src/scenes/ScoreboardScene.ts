@@ -5,20 +5,29 @@ import { MenuScene } from "./MenuScene.ts"
 import { fetchScore, fetchScores, type ScoreListItem } from "../api/scores.ts"
 import { formatRunTimeMs } from "../util/formatTime.ts"
 import { ReplayScene } from "./ReplayScene.ts"
+import { BOAT_CATALOG } from "../physics/boats/index.ts"
+import { getSelectedBoatId } from "../core/settings.ts"
+
+export interface ScoreboardOptions {
+  levelId?: string
+  boatId?: string
+}
 
 export class ScoreboardScene implements Scene {
   readonly id = "scoreboard"
 
   private readonly game: Game
   private root: HTMLElement | null = null
-  private levelId: string = SCENARIOS[0]?.id ?? "basics-calm"
+  private levelId: string
+  private boatId: string
   private scores: ScoreListItem[] = []
   private loading = false
   private error: string | null = null
 
-  constructor(game: Game, initialLevelId?: string) {
+  constructor(game: Game, options: ScoreboardOptions = {}) {
     this.game = game
-    if (initialLevelId) this.levelId = initialLevelId
+    this.levelId = options.levelId ?? SCENARIOS[0]?.id ?? "basics-calm"
+    this.boatId = options.boatId ?? getSelectedBoatId()
   }
 
   enter(ctx: FrameContext): void {
@@ -27,16 +36,27 @@ export class ScoreboardScene implements Scene {
     root.className = "menu scoreboard"
     root.innerHTML = `
       <div class="menu__brand">Scoreboard</div>
-      <p class="menu__tagline">Fastest runs per level. Watch a replay to see how they did it.</p>
-      <label class="scoreboard__level">
-        <span>Level</span>
-        <select data-field="level">
-          ${SCENARIOS.map(
-            (s) =>
-              `<option value="${s.id}"${s.id === this.levelId ? " selected" : ""}>${s.name}</option>`,
-          ).join("")}
-        </select>
-      </label>
+      <p class="menu__tagline">Fastest runs for each level and boat model.</p>
+      <div class="scoreboard__filters">
+        <label class="scoreboard__level">
+          <span>Level</span>
+          <select data-field="level">
+            ${SCENARIOS.map(
+              (s) =>
+                `<option value="${s.id}"${s.id === this.levelId ? " selected" : ""}>${s.name}</option>`,
+            ).join("")}
+          </select>
+        </label>
+        <label class="scoreboard__level">
+          <span>Boat</span>
+          <select data-field="boat">
+            ${BOAT_CATALOG.map(
+              (b) =>
+                `<option value="${b.id}"${b.id === this.boatId ? " selected" : ""}>${b.prototype}</option>`,
+            ).join("")}
+          </select>
+        </label>
+      </div>
       <p class="scoreboard__status" data-field="status">Loading…</p>
       <div class="scoreboard__table-wrap" data-field="table"></div>
       <div class="menu__actions">
@@ -47,8 +67,14 @@ export class ScoreboardScene implements Scene {
     root.querySelector<HTMLSelectElement>("[data-field='level']")?.addEventListener(
       "change",
       (ev) => {
-        const select = ev.target as HTMLSelectElement
-        this.levelId = select.value
+        this.levelId = (ev.target as HTMLSelectElement).value
+        void this.reload()
+      },
+    )
+    root.querySelector<HTMLSelectElement>("[data-field='boat']")?.addEventListener(
+      "change",
+      (ev) => {
+        this.boatId = (ev.target as HTMLSelectElement).value
         void this.reload()
       },
     )
@@ -77,12 +103,16 @@ export class ScoreboardScene implements Scene {
     ctx.ctx.fillRect(0, 0, ctx.width, ctx.height)
   }
 
+  private scoreboardOptions(): ScoreboardOptions {
+    return { levelId: this.levelId, boatId: this.boatId }
+  }
+
   private async reload(): Promise<void> {
     this.loading = true
     this.error = null
     this.renderTable()
     try {
-      this.scores = await fetchScores(this.levelId)
+      this.scores = await fetchScores(this.levelId, this.boatId)
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Could not load scores"
       this.scores = []
@@ -108,7 +138,7 @@ export class ScoreboardScene implements Scene {
       return
     }
     if (this.scores.length === 0) {
-      status.textContent = "No scores yet for this level — be the first."
+      status.textContent = "No scores yet for this level and boat — be the first."
       tableWrap.innerHTML = ""
       return
     }
@@ -149,13 +179,14 @@ export class ScoreboardScene implements Scene {
   private async openReplay(id: number): Promise<void> {
     const status = this.root?.querySelector<HTMLElement>('[data-field="status"]')
     if (status) status.textContent = "Loading replay…"
+    const opts = this.scoreboardOptions()
     try {
       const detail = await fetchScore(id)
       this.game.setScene(
         new ReplayScene(this.game, detail.replay, {
           title: `${detail.playerName} · ${formatRunTimeMs(detail.timeMs)}`,
           onBack: () => {
-            this.game.setScene(new ScoreboardScene(this.game, this.levelId))
+            this.game.setScene(new ScoreboardScene(this.game, opts))
           },
         }),
       )
