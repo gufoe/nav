@@ -447,11 +447,18 @@ export class SimScene implements Scene {
 
   private dockCameraTarget(ctx: FrameContext) {
     const { dock } = this.scenario
+    const spec = this.boatSpec
     return {
       dockX: dock.position.x,
       dockY: dock.position.y,
+      dockHeading: dock.heading,
+      dockLength: dock.length,
+      dockWidth: dock.width,
       boatX: this.boat.x,
       boatY: this.boat.y,
+      boatHeading: this.boat.heading,
+      boatLength: spec.lengthOverall,
+      boatBeam: spec.beam,
       width: ctx.width,
       height: ctx.height,
     }
@@ -504,7 +511,7 @@ export class SimScene implements Scene {
     if (input.wasActionPressed("simSpeed2")) this.setSimSpeed(2)
     if (input.wasActionPressed("simSpeed3")) this.setSimSpeed(3)
 
-    if (!this.paused) this.helm.update(input, time.dt)
+    if (!this.gameOver) this.helm.update(input, time.dt)
 
     this.refreshHud()
   }
@@ -719,6 +726,7 @@ export class SimScene implements Scene {
       maxHelm > 0 ? boat.rudderAngle / maxHelm : 0,
     )
     this.setBidirectionalMeter("throttle", controls.throttle)
+    this.touchControls?.setThrottle(controls.throttle)
 
     set(
       "wind",

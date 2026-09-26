@@ -2060,74 +2060,183 @@ body {
   display: none;
 }
 
-@media (hover: none) and (pointer: coarse) {
+/* Shown via portrait/coarse media and/or .touch-controls--active from TouchControls. */
+.touch-controls--active {
+  --touch-border: rgba(106, 160, 188, 0.32);
+  --touch-bg: rgba(14, 34, 48, 0.92);
+  --touch-bg-pressed: rgba(26, 58, 77, 0.95);
+  --touch-label: #8aa3b2;
+  --touch-glyph: #e8f1f5;
+  --touch-accent: #e8c478;
+  --touch-teal: #48d4c4;
+
+  display: block;
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 8;
+  padding: 0.5rem 0.75rem max(0.65rem, env(safe-area-inset-bottom));
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(5, 14, 20, 0.72) 55%);
+}
+
+.touch-controls--active .touch-controls__dock--game {
+  position: relative;
+  height: 10.5rem;
+  max-width: none;
+  margin: 0;
+  pointer-events: none;
+}
+
+.touch-controls--active .touch-controls__corner {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  pointer-events: auto;
+}
+
+.touch-controls--active .touch-controls__corner--helm {
+  left: 0.65rem;
+  flex-direction: row;
+  gap: 0.35rem;
+  width: min(46vw, 12.5rem);
+}
+
+.touch-controls--active .touch-controls__corner--engine {
+  right: 0.65rem;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.35rem;
+  width: auto;
+}
+
+.touch-controls--active .touch-controls__engine-pad {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: min(36vw, 9.25rem);
+}
+
+.touch-controls--active .touch-control--fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 3.2rem;
+  padding: 0.35rem;
+  border: 1px solid var(--touch-border);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(16, 38, 52, 0.88) 0%, var(--touch-bg) 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  color: var(--touch-glyph);
+  appearance: none;
+  -webkit-appearance: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease;
+}
+
+.touch-controls--active .touch-control__glyph {
+  font-size: clamp(1.35rem, 5.5vw, 1.75rem);
+  line-height: 1;
+  font-weight: 600;
+  color: var(--touch-glyph);
+}
+
+.touch-controls--active .touch-control--fab:active {
+  background: var(--touch-bg-pressed);
+  border-color: #6aa0bc;
+}
+
+.touch-controls--active .touch-controls__throttle-meter {
+  display: flex;
+  align-items: stretch;
+  flex: 0 0 0.65rem;
+  padding: 0.1rem 0;
+}
+
+.touch-controls--active .touch-controls__throttle-track {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 100%;
+  border-radius: 4px;
+  background: rgba(8, 20, 28, 0.55);
+  border: 1px solid var(--touch-border);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) inset;
+}
+
+.touch-controls--active .touch-controls__throttle-track::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: rgba(106, 160, 188, 0.55);
+  z-index: 1;
+}
+
+.touch-controls--active .touch-controls__throttle-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-radius: 2px;
+  background: var(--touch-teal);
+  opacity: 0.92;
+  transition:
+    height 80ms linear,
+    top 80ms linear,
+    bottom 80ms linear;
+}
+
+.touch-controls--active .touch-controls__throttle-fill--astern {
+  background: #6aa0bc;
+  opacity: 0.88;
+}
+
+.touch-controls--active .touch-control--neutral {
+  min-height: 2.75rem;
+  border-color: rgba(232, 196, 120, 0.45);
+  background: rgba(8, 20, 28, 0.65);
+}
+
+.touch-controls--active .touch-control__glyph--letter {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: clamp(1.05rem, 4.2vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--touch-accent);
+}
+
+.touch-controls--active .touch-control--neutral.touch-control--at-neutral {
+  border-color: var(--touch-accent);
+  background: rgba(14, 34, 48, 0.85);
+}
+
+.touch-controls--active .touch-control--neutral.touch-control--ahead {
+  border-color: rgba(72, 212, 196, 0.45);
+}
+
+.touch-controls--active .touch-control--neutral.touch-control--astern {
+  border-color: rgba(106, 160, 188, 0.5);
+}
+
+/* Portrait / touch: coarse-pointer alone misses many phones and DevTools emulation. */
+@media (hover: none) and (pointer: coarse), (max-width: 900px) and (orientation: portrait) {
   #game {
     touch-action: none;
-  }
-
-  .touch-controls {
-    position: absolute;
-    inset: auto 0 max(0.75rem, env(safe-area-inset-bottom));
-    z-index: 8;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: end;
-    gap: 0.5rem;
-    padding: 0 0.75rem;
-    pointer-events: none;
-  }
-
-  .touch-controls__cluster {
-    display: flex;
-    gap: 0.45rem;
-    pointer-events: auto;
-  }
-
-  .touch-controls__cluster--helm {
-    justify-content: flex-start;
-  }
-
-  .touch-controls__cluster--throttle {
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: flex-end;
-  }
-
-  .touch-control {
-    min-width: 4.5rem;
-    min-height: 3.25rem;
-    padding: 0.45rem 0.65rem;
-    border: 1px solid rgba(150, 205, 228, 0.52);
-    border-radius: 0.6rem;
-    background: linear-gradient(165deg, rgba(28, 71, 91, 0.94), rgba(11, 30, 42, 0.94));
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07) inset, 0 7px 18px rgba(0, 0, 0, 0.28);
-    color: #e8f1f5;
-    font: 600 0.75rem/1 "IBM Plex Sans", "Segoe UI", sans-serif;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-
-  .touch-control:active {
-    transform: translateY(1px);
-    border-color: #9ad9ee;
-    background: #245c75;
-    box-shadow: 0 0 18px rgba(106, 200, 230, 0.22);
-  }
-
-  .touch-control--neutral {
-    min-height: 2.3rem;
-    border-color: rgba(232, 196, 120, 0.58);
-    color: #f0d898;
-  }
-
-  .touch-control--pause {
-    min-width: 3rem;
-    min-height: 3rem;
-    pointer-events: auto;
-    font-size: 1rem;
   }
 
   .hud-bar {
@@ -2143,11 +2252,14 @@ body {
   }
 
   .objective-panel {
-    right: 0.6rem;
-    top: max(0.6rem, env(safe-area-inset-top));
+    left: 0.75rem;
+    right: 0.75rem;
+    top: max(0.5rem, env(safe-area-inset-top));
     bottom: auto;
-    width: min(11.5rem, calc(100vw - 1.2rem));
-    padding: 0.45rem 0.55rem;
+    width: auto;
+    max-width: 26rem;
+    margin: 0 auto;
+    padding: 0.5rem 0.65rem 0.55rem;
   }
 
   .objective-panel__hint,
@@ -2157,25 +2269,99 @@ body {
   }
 
   .objective-panel__title {
-    font-size: 0.82rem;
-  }
-
-  .objective-semaphore__value {
-    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.88rem;
+    text-align: center;
   }
 
   .objective-semaphores {
-    gap: 0.25rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
   }
 
   .objective-semaphore {
-    padding: 0.25rem 0.35rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.25rem;
+    text-align: center;
+  }
+
+  .objective-semaphore__value {
+    font-size: 0.62rem;
+    line-height: 1.25;
   }
 
   .objective-semaphore__lights {
     flex-direction: row;
-    padding: 0.16rem 0.2rem;
+    padding: 0.14rem 0.18rem;
   }
+
+  .objective-panel .checkpoint-meter {
+    margin-top: 0.4rem;
+  }
+}
+
+html.touch-ui #game {
+  touch-action: none;
+}
+
+html.touch-ui .hud-bar,
+html.touch-ui .conditions--env,
+html.touch-ui .conditions--boat {
+  display: none;
+}
+
+html.touch-ui .objective-panel {
+  left: 0.75rem;
+  right: 0.75rem;
+  top: max(0.5rem, env(safe-area-inset-top));
+  bottom: auto;
+  width: auto;
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 0.5rem 0.65rem 0.55rem;
+}
+
+html.touch-ui .objective-panel__hint,
+html.touch-ui .objective-semaphore__label,
+html.touch-ui .objective-panel__step {
+  display: none;
+}
+
+html.touch-ui .objective-panel__title {
+  margin-bottom: 0.4rem;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+html.touch-ui .objective-semaphores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+html.touch-ui .objective-semaphore {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.25rem;
+  text-align: center;
+}
+
+html.touch-ui .objective-semaphore__value {
+  font-size: 0.62rem;
+  line-height: 1.25;
+}
+
+html.touch-ui .objective-semaphore__lights {
+  flex-direction: row;
+  padding: 0.14rem 0.18rem;
+}
+
+html.touch-ui .objective-panel .checkpoint-meter {
+  margin-top: 0.4rem;
 }
 
 @media (hover: none) and (pointer: coarse) and (max-height: 520px) {
@@ -2188,16 +2374,11 @@ body {
     display: none;
   }
 
-  .touch-controls__cluster--throttle {
-    flex-direction: row;
+  .touch-controls--active .touch-controls__dock--game {
+    height: 9rem;
   }
 
-  .touch-control {
-    min-width: 4rem;
-    min-height: 2.8rem;
-  }
-
-  .touch-control--neutral {
-    min-height: 2.8rem;
+  .touch-controls--active .touch-control--fab {
+    min-height: 2.85rem;
   }
 }

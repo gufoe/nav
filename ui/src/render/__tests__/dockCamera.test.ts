@@ -1,24 +1,49 @@
 import assert from "node:assert/strict"
 import { describe, test } from "node:test"
+import { degToRad } from "../../math/MathUtil.ts"
 import {
-  BOAT_RING_FRACTION,
   boatScreenDirection,
   computeTargetPixelsPerMeter,
   computeViewFrame,
   DockCamera,
   edgeReachPx,
+  framingHullVertices,
+  HULL_VIEW_MARGIN,
+  pairCentroid,
   type DockCameraTarget,
 } from "../DockCamera.ts"
 
 const baseTarget = (overrides: Partial<DockCameraTarget> = {}): DockCameraTarget => ({
   dockX: 0,
   dockY: 0,
+  dockHeading: degToRad(-90),
+  dockLength: 28,
+  dockWidth: 3,
   boatX: -25,
   boatY: 8,
+  boatHeading: 0,
+  boatLength: 11,
+  boatBeam: 3.5,
   width: 1280,
   height: 720,
   ...overrides,
 })
+
+function assertFramingHullInsideFrame(
+  target: DockCameraTarget,
+  ppm: number,
+  frame: ReturnType<typeof computeViewFrame>,
+): void {
+  const c = pairCentroid(target)
+  const limitX = frame.halfW * HULL_VIEW_MARGIN + 0.05
+  const limitY = frame.halfH * HULL_VIEW_MARGIN + 0.05
+  for (const v of framingHullVertices(target)) {
+    const sx = (v.x - c.cx) * ppm
+    const sy = -(v.y - c.cy) * ppm
+    assert.ok(Math.abs(sx) <= limitX, `sx ${sx} exceeds ${limitX}`)
+    assert.ok(Math.abs(sy) <= limitY, `sy ${sy} exceeds ${limitY}`)
+  }
+}
 
 describe("DockCamera", () => {
   test("uses wider horizontal reach for a beam approach", () => {
@@ -30,25 +55,47 @@ describe("DockCamera", () => {
     assert.ok(reachY >= frame.halfH * 0.99)
   })
 
-  test("places the boat on the framing ring along its bearing", () => {
+  test("centers on the dock–boat midpoint", () => {
+    const target = baseTarget()
+    const cam = new DockCamera()
+    cam.snapTo(target)
+    const want = pairCentroid(target)
+    assert.ok(Math.abs(cam.centerX - want.cx) < 1e-9)
+    assert.ok(Math.abs(cam.centerY - want.cy) < 1e-9)
+  })
+
+  test("keeps the full dock and boat hull inside the view frame", () => {
     const frame = computeViewFrame(1280, 720)
     const target = baseTarget()
-    const { distM } = boatScreenDirection(
-      target.dockX,
-      target.dockY,
-      target.boatX,
-      target.boatY,
-    )
     const ppm = computeTargetPixelsPerMeter(target, frame)
-    const boatPx = distM * ppm
-    const { ux, uy } = boatScreenDirection(
-      target.dockX,
-      target.dockY,
-      target.boatX,
-      target.boatY,
+    assertFramingHullInsideFrame(target, ppm, frame)
+  })
+
+  test("zooms out when the combined hull span grows", () => {
+    const frame = computeViewFrame(1280, 720)
+    const tight = computeTargetPixelsPerMeter(
+      baseTarget({
+        boatX: -18,
+        boatY: 0,
+        dockLength: 8,
+        dockWidth: 2,
+        boatLength: 8,
+        boatBeam: 2.5,
+      }),
+      frame,
     )
-    const want = edgeReachPx(frame.halfW, frame.halfH, ux, uy) * BOAT_RING_FRACTION
-    assert.ok(Math.abs(boatPx - want) < 0.05, `got ${boatPx}, want ${want}`)
+    const loose = computeTargetPixelsPerMeter(
+      baseTarget({
+        boatX: -40,
+        boatY: 0,
+        dockLength: 28,
+        dockWidth: 3,
+        boatLength: 11,
+        boatBeam: 3.5,
+      }),
+      frame,
+    )
+    assert.ok(loose < tight, `loose ${loose} should be less than tight ${tight}`)
   })
 
   test("zooms in when the boat is closer to the dock", () => {
@@ -64,10 +111,10 @@ describe("DockCamera", () => {
 
   test("view frame stays inside the canvas with HUD insets", () => {
     const { cx, cy, halfW, halfH } = computeViewFrame(1280, 720)
-    assert.ok(cx - halfW > 200)
-    assert.ok(cx + halfW < 1280 - 180)
-    assert.ok(cy - halfH > 80)
-    assert.ok(cy + halfH < 720 - 70)
+    assert.ok(cx - halfW > 180)
+    assert.ok(cx + halfW < 1280 - 160)
+    assert.ok(cy - halfH > 70)
+    assert.ok(cy + halfH < 720 - 60)
   })
 
   test("portrait frame leaves a centre lane for touch controls", () => {
@@ -76,5 +123,11 @@ describe("DockCamera", () => {
     assert.ok(cy < 960, `portrait frame should sit above centre, got ${cy}`)
     assert.ok(halfW > 400, `portrait frame should use most of the screen width, got ${halfW}`)
     assert.ok(halfH > 300, `portrait frame should leave a useful centre lane, got ${halfH}`)
+  })
+
+  test("boatScreenDirection matches beam approach geometry", () => {
+    const { ux, distM } = boatScreenDirection(0, 0, -25, 8)
+    assert.ok(distM > 25)
+    assert.ok(ux < 0)
   })
 })

@@ -225,11 +225,18 @@ export class ReplayScene implements Scene {
     const scenario = this.scenario
     if (!renderer || !envViz || !scenario) return
 
+    const spec = this.dynamics.boat
     const target = {
       dockX: scenario.dock.position.x,
       dockY: scenario.dock.position.y,
+      dockHeading: scenario.dock.heading,
+      dockLength: scenario.dock.length,
+      dockWidth: scenario.dock.width,
       boatX: this.boat.x,
       boatY: this.boat.y,
+      boatHeading: this.boat.heading,
+      boatLength: spec.lengthOverall,
+      boatBeam: spec.beam,
       width: ctx.width,
       height: ctx.height,
     }
@@ -301,11 +308,18 @@ export class ReplayScene implements Scene {
 
   private snapDockCamera(ctx: FrameContext): void {
     const scenario = this.scenario!
+    const spec = this.dynamics.boat
     this.dockCamera.snapTo({
       dockX: scenario.dock.position.x,
       dockY: scenario.dock.position.y,
+      dockHeading: scenario.dock.heading,
+      dockLength: scenario.dock.length,
+      dockWidth: scenario.dock.width,
       boatX: this.boat.x,
       boatY: this.boat.y,
+      boatHeading: this.boat.heading,
+      boatLength: spec.lengthOverall,
+      boatBeam: spec.beam,
       width: ctx.width,
       height: ctx.height,
     })
