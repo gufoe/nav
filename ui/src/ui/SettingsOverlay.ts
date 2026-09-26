@@ -51,6 +51,7 @@ export class SettingsOverlay {
           </button>
         </header>
         <section class="settings-section">
+          <p class="settings-section__hint">Physics is approximate; real boats vary with load and trim.</p>
           <div class="settings-boats" data-field="boats">
             ${boatOptionsHtml(getSelectedBoatId())}
           </div>

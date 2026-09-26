@@ -40,6 +40,7 @@ export class ScoreboardScene implements Scene {
     root.innerHTML = `
       <header class="scoreboard__hero">
         <h1 class="scoreboard__hero-title">Scoreboard</h1>
+        <p class="scoreboard__hero-tagline">Simulation time, fastest first — open any row for a replay.</p>
       </header>
       <div class="scoreboard__panel scoreboard__panel--focus">
         <div class="scoreboard__filters">

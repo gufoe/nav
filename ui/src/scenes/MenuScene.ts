@@ -36,29 +36,43 @@ export class MenuScene implements Scene {
     root.innerHTML = `
       <header class="menu__header">
         <div class="menu__brand">Nav</div>
-        <p class="menu__tagline">Dock under wind and tide.</p>
+        <p class="menu__tagline">
+          Sailboat docking simulator when wind and tide push back.
+        </p>
       </header>
 
       <div class="menu-home__zones">
         <section class="menu-zone menu-zone--boat" aria-labelledby="menu-zone-boat">
-          <h2 class="menu-zone__label" id="menu-zone-boat">Boat</h2>
-          <button class="menu-zone__body menu__boat-picker" type="button" data-action="boat" aria-haspopup="dialog">
-            <span class="menu__boat-picker-inner" data-field="boat-summary"></span>
+          <header class="menu-zone__head" id="menu-zone-boat">
+            <h2 class="menu-zone__title">Boat</h2>
+            <p class="menu-zone__subtitle">Model and hull used in every scenario</p>
+          </header>
+          <button class="menu-zone__body menu__boat-entry" type="button" data-action="boat" aria-haspopup="dialog">
+            <span class="menu__boat-entry-text" data-field="boat-summary"></span>
+            <span class="menu__boat-link">Change →</span>
           </button>
         </section>
 
         <section class="menu-zone menu-zone--scores" aria-labelledby="menu-zone-scores">
-          <h2 class="menu-zone__label" id="menu-zone-scores">Scoreboard</h2>
+          <header class="menu-zone__head" id="menu-zone-scores">
+            <h2 class="menu-zone__title">Scoreboard</h2>
+            <p class="menu-zone__subtitle">Fastest runs and full replays per level</p>
+          </header>
           <button class="menu-zone__body menu__scoreboard-entry" type="button" data-action="scoreboard">
-            <span class="menu__scoreboard-link">Times &amp; replays →</span>
+            <span class="menu__scoreboard-entry-text">Browse times and watch how others docked</span>
+            <span class="menu__scoreboard-link">Open →</span>
           </button>
         </section>
 
         <section class="menu-zone menu-zone--levels" aria-labelledby="menu-zone-levels">
-          <h2 class="menu-zone__label" id="menu-zone-levels">Levels</h2>
+          <header class="menu-zone__head" id="menu-zone-levels">
+            <h2 class="menu-zone__title">Levels</h2>
+            <p class="menu-zone__subtitle">Training ladder first, then harder berths</p>
+          </header>
           <div class="menu-zone__body">
             <div class="menu__section" aria-labelledby="menu-basics-heading">
               <h3 class="menu__section-title" id="menu-basics-heading">Basics</h3>
+              <p class="menu__section-hint">In order — each step adds wind, tide, or seas.</p>
               <div class="menu-levels">
                 ${BASICS_SCENARIOS.map((scenario, index) => renderLevelButton(scenario, index === 0)).join("")}
               </div>
@@ -68,6 +82,7 @@ export class MenuScene implements Scene {
                 ? `
             <div class="menu__section" aria-labelledby="menu-challenge-heading">
               <h3 class="menu__section-title" id="menu-challenge-heading">Challenge</h3>
+              <p class="menu__section-hint">When the ladder feels solid, try a tougher approach.</p>
               <div class="menu-levels">
                 ${CHALLENGE_SCENARIOS.map((scenario) => renderLevelButton(scenario, false)).join("")}
               </div>
@@ -139,7 +154,7 @@ export class MenuScene implements Scene {
     el.innerHTML = `
       <span class="menu__boat-name">${escapeHtml(spec.prototype)}</span>
       <span class="menu__boat-meta">${escapeHtml(formatBoatMeta(spec))}</span>
-    `
+    `.trim()
   }
 }
 

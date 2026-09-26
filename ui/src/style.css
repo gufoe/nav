@@ -82,12 +82,24 @@ body {
   padding: 0.55rem 0.65rem 0.65rem;
 }
 
-.menu-zone__label {
-  margin: 0 0 0.4rem 0.15rem;
-  font-size: 0.68rem;
+.menu-zone__head {
+  margin: 0 0 0.55rem 0.05rem;
+}
+
+.menu-zone__title {
+  margin: 0;
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.2rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  line-height: 1.2;
+  color: #e8f1f5;
+}
+
+.menu-zone__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #8aa3b2;
 }
 
 .menu-zone__body {
@@ -101,8 +113,12 @@ body {
   box-shadow: 0 0 0 1px rgba(106, 160, 188, 0.06) inset;
 }
 
-.menu-zone--boat .menu-zone__label {
-  color: #8ec4dc;
+.menu-zone--boat .menu-zone__title {
+  color: #b8dce8;
+}
+
+.menu-zone--boat .menu-zone__subtitle {
+  color: #7a9eb0;
 }
 
 /* —— Scoreboard: compact green —— */
@@ -112,8 +128,12 @@ body {
   box-shadow: 0 0 0 1px rgba(98, 216, 152, 0.06) inset;
 }
 
-.menu-zone--scores .menu-zone__label {
-  color: #9ef0c8;
+.menu-zone--scores .menu-zone__title {
+  color: #b8f0d4;
+}
+
+.menu-zone--scores .menu-zone__subtitle {
+  color: #7aab96;
 }
 
 /* —— Levels: warm mission panel —— */
@@ -125,17 +145,22 @@ body {
   box-shadow: 0 0 0 1px rgba(232, 196, 120, 0.05) inset;
 }
 
-.menu-zone--levels .menu-zone__label {
-  color: #e8c478;
+.menu-zone--levels .menu-zone__title {
+  color: #f0d898;
+}
+
+.menu-zone--levels .menu-zone__subtitle {
+  color: #a89878;
 }
 
 .menu-zone--levels .menu__section-title {
-  color: #c9b896;
+  color: #e8dcc4;
 }
 
 .menu-zone--levels .menu-level {
   border-color: rgba(120, 100, 70, 0.35);
   background: rgba(22, 32, 42, 0.75);
+  color: #9bb4c2;
 }
 
 .menu-zone--levels .menu-level:hover,
@@ -147,6 +172,21 @@ body {
 .menu-zone--levels .menu-level--primary {
   border-color: rgba(232, 196, 120, 0.45);
   background: linear-gradient(165deg, rgba(48, 42, 28, 0.55) 0%, rgba(22, 32, 42, 0.9) 100%);
+}
+
+.menu-zone--levels .menu-level__name {
+  font-weight: 500;
+  font-size: 0.94rem;
+  color: #c4b8a0;
+}
+
+.menu-zone--levels .menu-level--primary .menu-level__name {
+  color: #ddd0b4;
+}
+
+.menu-zone--levels .menu-level:hover .menu-level__name,
+.menu-zone--levels .menu-level:focus-visible .menu-level__name {
+  color: #e8dcc4;
 }
 
 .menu__header {
@@ -170,36 +210,47 @@ body {
   line-height: 1.5;
 }
 
-.menu__boat-picker {
+.menu__boat-entry {
   appearance: none;
-  padding: 0;
-  border: none;
-  background: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(106, 160, 188, 0.28);
+  border-radius: 6px;
+  background: rgba(8, 22, 32, 0.45);
   cursor: pointer;
   text-align: left;
   font: inherit;
   color: inherit;
-  border-radius: 6px;
-}
-
-.menu__boat-picker-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid rgba(106, 160, 188, 0.28);
-  background: rgba(8, 22, 32, 0.45);
   transition:
     border-color 140ms ease,
     background 140ms ease;
 }
 
-.menu__boat-picker:hover .menu__boat-picker-inner,
-.menu__boat-picker:focus-visible .menu__boat-picker-inner {
+.menu__boat-entry:hover,
+.menu__boat-entry:focus-visible {
   border-color: rgba(106, 160, 188, 0.5);
   background: rgba(12, 30, 42, 0.65);
   outline: none;
+}
+
+.menu__boat-entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.menu__boat-link {
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6eb8dc;
+  white-space: nowrap;
 }
 
 .menu__boat-eyebrow {
@@ -210,9 +261,9 @@ body {
 
 .menu__boat-name {
   font-family: "IBM Plex Serif", Georgia, serif;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  color: #e8f1f5;
+  color: #c8dce8;
 }
 
 .menu__boat-meta {
@@ -223,9 +274,11 @@ body {
 .menu__scoreboard-entry {
   appearance: none;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-start;
-  padding: 0.55rem 0.75rem;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  padding: 0.65rem 0.75rem;
   border: 1px solid rgba(98, 216, 152, 0.22);
   border-radius: 6px;
   background: rgba(8, 22, 18, 0.45);
@@ -245,6 +298,13 @@ body {
   outline: none;
 }
 
+.menu__scoreboard-entry-text {
+  flex: 1 1 10rem;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: #b8d4c8;
+}
+
 .menu__scoreboard-link {
   flex: 0 0 auto;
   font-size: 0.82rem;
@@ -262,19 +322,19 @@ body {
 }
 
 .menu__section-title {
-  margin: 0 0 0.25rem;
-  font-size: 0.78rem;
+  margin: 0 0 0.2rem;
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.05rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #8aa3b2;
+  letter-spacing: 0.01em;
+  color: #c9d4dc;
 }
 
 .menu__section-hint {
   margin: 0 0 0.65rem;
-  font-size: 0.82rem;
-  line-height: 1.4;
-  color: #7a939f;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #8aa3b2;
 }
 
 .menu-levels {
