@@ -155,7 +155,6 @@ export function drawSwellLayer(
       travel,
       wavelength,
       reach,
-      samples: 24,
       axes,
       bounds,
       edgeFadeM,
@@ -248,7 +247,6 @@ function drawPropagationHints(
     travel: number
     wavelength: number
     reach: number
-    samples: number
     axes: SwellAxes
     bounds: VisibleWorldBounds
     edgeFadeM: number
@@ -265,7 +263,6 @@ function drawPropagationHints(
     travel,
     wavelength,
     reach,
-    samples,
     axes,
     bounds,
     edgeFadeM,
