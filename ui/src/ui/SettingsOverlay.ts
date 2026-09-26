@@ -45,16 +45,12 @@ export class SettingsOverlay {
       <div class="settings-overlay__backdrop" data-action="close"></div>
       <div class="settings-overlay__panel">
         <header class="settings-overlay__header">
-          <h2 class="settings-overlay__title" id="settings-title">Choose your boat</h2>
+          <h2 class="settings-overlay__title" id="settings-title">Boat</h2>
           <button class="settings-overlay__close btn" type="button" data-action="close" aria-label="Close">
             Done
           </button>
         </header>
-        <section class="settings-section" aria-labelledby="settings-boat-heading">
-          <h3 class="settings-section__title" id="settings-boat-heading">Your boat</h3>
-          <p class="settings-section__hint">
-            Used in every scenario. Physics is approximate — real hulls differ by load and trim.
-          </p>
+        <section class="settings-section">
           <div class="settings-boats" data-field="boats">
             ${boatOptionsHtml(getSelectedBoatId())}
           </div>

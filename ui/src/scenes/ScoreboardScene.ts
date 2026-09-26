@@ -7,7 +7,7 @@ import { fetchScore, fetchScores, type ScoreListItem } from "../api/scores.ts"
 import { formatRunTimeMs } from "../util/formatTime.ts"
 import { formatScoreDate } from "../util/formatScoreDate.ts"
 import { ReplayScene } from "./ReplayScene.ts"
-import { BOAT_CATALOG, boatById } from "../physics/boats/index.ts"
+import { BOAT_CATALOG } from "../physics/boats/index.ts"
 import { getSelectedBoatId, setSelectedBoatId } from "../core/settings.ts"
 import { readRememberedPlayerName } from "../recording/playerName.ts"
 
@@ -36,11 +36,12 @@ export class ScoreboardScene implements Scene {
   enter(ctx: FrameContext): void {
     void ctx
     const root = document.createElement("div")
-    root.className = "menu scoreboard"
+    root.className = "menu menu--scoreboard scoreboard"
     root.innerHTML = `
-      <div class="menu__brand scoreboard__brand">Scoreboard</div>
-      <p class="menu__tagline">Fastest simulation times — one board per level and boat.</p>
-      <div class="scoreboard__panel">
+      <header class="scoreboard__hero">
+        <h1 class="scoreboard__hero-title">Scoreboard</h1>
+      </header>
+      <div class="scoreboard__panel scoreboard__panel--focus">
         <div class="scoreboard__filters">
           <label class="scoreboard__filter">
             <span>Level</span>
@@ -64,7 +65,6 @@ export class ScoreboardScene implements Scene {
             Refresh
           </button>
         </div>
-        <div class="scoreboard__context" data-field="context"></div>
         <p class="scoreboard__status" data-field="status">Loading…</p>
         <div class="scoreboard__table-wrap" data-field="table"></div>
       </div>
@@ -78,7 +78,6 @@ export class ScoreboardScene implements Scene {
       "change",
       (ev) => {
         this.levelId = (ev.target as HTMLSelectElement).value
-        this.refreshContext()
         void this.reload()
       },
     )
@@ -86,7 +85,6 @@ export class ScoreboardScene implements Scene {
       "change",
       (ev) => {
         this.boatId = (ev.target as HTMLSelectElement).value
-        this.refreshContext()
         void this.reload()
       },
     )
@@ -102,7 +100,6 @@ export class ScoreboardScene implements Scene {
 
     this.game.uiRoot.appendChild(root)
     this.root = root
-    this.refreshContext()
     void this.reload()
   }
 
@@ -128,22 +125,6 @@ export class ScoreboardScene implements Scene {
 
   private selectedScenario() {
     return SCENARIOS.find((s) => s.id === this.levelId)
-  }
-
-  private refreshContext(): void {
-    const el = this.root?.querySelector<HTMLElement>('[data-field="context"]')
-    if (!el) return
-    const scenario = this.selectedScenario()
-    const boat = boatById(this.boatId)
-    if (!scenario) {
-      el.innerHTML = ""
-      return
-    }
-    el.innerHTML = `
-      <h2 class="scoreboard__context-title">${escapeHtml(scenario.name)}</h2>
-      <p class="scoreboard__context-boat">${escapeHtml(boat.prototype)} · ${escapeHtml(boat.kind)}</p>
-      <p class="scoreboard__context-desc">${escapeHtml(scenario.description)}</p>
-    `
   }
 
   private playSelectedLevel(): void {
@@ -187,8 +168,7 @@ export class ScoreboardScene implements Scene {
       status.textContent = ""
       tableWrap.innerHTML = `
         <div class="scoreboard__empty">
-          <p>No runs yet for this level and boat.</p>
-          <p class="scoreboard__empty-hint">Complete the level and save your sim time to appear here.</p>
+          <p>No runs yet — finish the level and save your time.</p>
         </div>
       `
       return
@@ -198,9 +178,7 @@ export class ScoreboardScene implements Scene {
     const remembered = readRememberedPlayerName().toLowerCase()
 
     status.textContent =
-      this.scores.length >= 50
-        ? "Showing top 50 runs (sim time, fastest first)"
-        : `${this.scores.length} run${this.scores.length === 1 ? "" : "s"} · sim time, fastest first`
+      this.scores.length >= 50 ? "Top 50" : `${this.scores.length} run${this.scores.length === 1 ? "" : "s"}`
 
     tableWrap.innerHTML = `
       <table class="scoreboard__table">

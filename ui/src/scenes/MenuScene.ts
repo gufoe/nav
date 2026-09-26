@@ -27,48 +27,59 @@ export class MenuScene implements Scene {
     void ctx
     const overlayRoot = this.game.uiRoot.parentElement ?? document.body
     this.settings = new SettingsOverlay(overlayRoot)
-    this.settings.setOnChange(() => this.refreshBoatPicker())
+    this.settings.setOnChange(() => {
+      this.refreshBoatPicker()
+    })
 
     const root = document.createElement("div")
     root.className = "menu menu--home"
     root.innerHTML = `
       <header class="menu__header">
         <div class="menu__brand">Nav</div>
-        <p class="menu__tagline">
-          Force-based sailboat docking — wind, current, prop walk, and recorded runs on the scoreboard.
-        </p>
+        <p class="menu__tagline">Dock under wind and tide.</p>
       </header>
 
-      <button class="menu__boat-picker" type="button" data-action="boat" aria-haspopup="dialog">
-        <span class="menu__boat-picker-inner" data-field="boat-summary"></span>
-      </button>
-
-      <div class="menu__scroll">
-        <section class="menu__section" aria-labelledby="menu-basics-heading">
-          <h2 class="menu__section-title" id="menu-basics-heading">Training ladder</h2>
-          <p class="menu__section-hint">Work through in order — each level adds wind, tide, or seas.</p>
-          <div class="menu-levels">
-            ${BASICS_SCENARIOS.map((scenario, index) => renderLevelButton(scenario, index === 0)).join("")}
-          </div>
+      <div class="menu-home__zones">
+        <section class="menu-zone menu-zone--boat" aria-labelledby="menu-zone-boat">
+          <h2 class="menu-zone__label" id="menu-zone-boat">Boat</h2>
+          <button class="menu-zone__body menu__boat-picker" type="button" data-action="boat" aria-haspopup="dialog">
+            <span class="menu__boat-picker-inner" data-field="boat-summary"></span>
+          </button>
         </section>
 
-        ${
-          CHALLENGE_SCENARIOS.length > 0
-            ? `
-        <section class="menu__section" aria-labelledby="menu-challenge-heading">
-          <h2 class="menu__section-title" id="menu-challenge-heading">Challenge</h2>
-          <div class="menu-levels">
-            ${CHALLENGE_SCENARIOS.map((scenario) => renderLevelButton(scenario, false)).join("")}
+        <section class="menu-zone menu-zone--scores" aria-labelledby="menu-zone-scores">
+          <h2 class="menu-zone__label" id="menu-zone-scores">Scoreboard</h2>
+          <button class="menu-zone__body menu__scoreboard-entry" type="button" data-action="scoreboard">
+            <span class="menu__scoreboard-link">Times &amp; replays →</span>
+          </button>
+        </section>
+
+        <section class="menu-zone menu-zone--levels" aria-labelledby="menu-zone-levels">
+          <h2 class="menu-zone__label" id="menu-zone-levels">Levels</h2>
+          <div class="menu-zone__body">
+            <div class="menu__section" aria-labelledby="menu-basics-heading">
+              <h3 class="menu__section-title" id="menu-basics-heading">Basics</h3>
+              <div class="menu-levels">
+                ${BASICS_SCENARIOS.map((scenario, index) => renderLevelButton(scenario, index === 0)).join("")}
+              </div>
+            </div>
+            ${
+              CHALLENGE_SCENARIOS.length > 0
+                ? `
+            <div class="menu__section" aria-labelledby="menu-challenge-heading">
+              <h3 class="menu__section-title" id="menu-challenge-heading">Challenge</h3>
+              <div class="menu-levels">
+                ${CHALLENGE_SCENARIOS.map((scenario) => renderLevelButton(scenario, false)).join("")}
+              </div>
+            </div>`
+                : ""
+            }
           </div>
-        </section>`
-            : ""
-        }
+        </section>
       </div>
 
-      <nav class="menu__footer" aria-label="More">
-        <button class="menu__footer-link" type="button" data-action="scoreboard">Scoreboard</button>
-        <span class="menu__footer-sep" aria-hidden="true">·</span>
-        <button class="menu__footer-link" type="button" data-action="help">Controls <kbd>H</kbd></button>
+      <nav class="menu__footer" aria-label="Help">
+        <button class="menu__footer-link" type="button" data-action="help">Help <kbd>H</kbd></button>
       </nav>
     `
 
@@ -126,7 +137,6 @@ export class MenuScene implements Scene {
     if (!el) return
     const spec = boatById(getSelectedBoatId())
     el.innerHTML = `
-      <span class="menu__boat-eyebrow">Your boat · tap to change</span>
       <span class="menu__boat-name">${escapeHtml(spec.prototype)}</span>
       <span class="menu__boat-meta">${escapeHtml(formatBoatMeta(spec))}</span>
     `
@@ -141,7 +151,6 @@ function renderLevelButton(scenario: Scenario, primary: boolean): string {
       type="button"
     >
       <span class="menu-level__name">${escapeHtml(scenario.name)}</span>
-      <span class="menu-level__desc">${escapeHtml(scenario.description)}</span>
     </button>
   `
 }
