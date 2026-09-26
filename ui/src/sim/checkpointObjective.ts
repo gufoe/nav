@@ -1,4 +1,3 @@
-import { radToDeg } from "../math/MathUtil.ts"
 import { boatHeadingDisplayDeg } from "../ui/compassRose.ts"
 import { msToKnots } from "../math/Units.ts"
 import type { ParkingCheckpoint } from "./checkpoints.ts"
