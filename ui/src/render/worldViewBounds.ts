@@ -27,3 +27,30 @@ export function visibleWorldBounds(
     maxY: worldCenterY + screenCenterY / ppm,
   }
 }
+
+/** Project visible corners onto flow axes through world origin (swell / flow reach). */
+export function flowAlignedReach(
+  bounds: VisibleWorldBounds,
+  ux: number,
+  uy: number,
+): { crossReach: number; alongMin: number; alongMax: number } {
+  const px = -uy
+  const py = ux
+  const corners: [number, number][] = [
+    [bounds.minX, bounds.minY],
+    [bounds.minX, bounds.maxY],
+    [bounds.maxX, bounds.minY],
+    [bounds.maxX, bounds.maxY],
+  ]
+  let crossReach = 0
+  let alongMin = Infinity
+  let alongMax = -Infinity
+  for (const [wx, wy] of corners) {
+    const along = ux * wx + uy * wy
+    const cross = px * wx + py * wy
+    crossReach = Math.max(crossReach, Math.abs(cross))
+    alongMin = Math.min(alongMin, along)
+    alongMax = Math.max(alongMax, along)
+  }
+  return { crossReach, alongMin, alongMax }
+}

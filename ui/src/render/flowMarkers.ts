@@ -7,11 +7,9 @@ import {
 import { visibleWorldBounds } from "./worldViewBounds.ts"
 
 export interface FlowMarkerView {
-  minX: number
-  maxX: number
-  minY: number
-  maxY: number
-  /** Max distance from world center to a visible edge — swell reach. */
+  worldCenterX: number
+  worldCenterY: number
+  /** Max distance from world center to a visible edge — swell reach / marker cull. */
   halfW: number
   halfH: number
 }
@@ -36,10 +34,8 @@ export function viewExtents(
     sy,
   )
   return {
-    minX,
-    maxX,
-    minY,
-    maxY,
+    worldCenterX,
+    worldCenterY,
     halfW: Math.max(worldCenterX - minX, maxX - worldCenterX),
     halfH: Math.max(worldCenterY - minY, maxY - worldCenterY),
   }
@@ -81,12 +77,11 @@ export function forEachFlowMarker(
         salt,
         flowDir: flow.headingTo,
       })
-      const { minX, maxX, minY, maxY } = view
+      const dx = cx - view.worldCenterX
+      const dy = cy - view.worldCenterY
       if (
-        cx < minX - margin ||
-        cx > maxX + margin ||
-        cy < minY - margin ||
-        cy > maxY + margin
+        Math.abs(dx) > halfW + margin ||
+        Math.abs(dy) > halfH + margin
       ) {
         continue
       }

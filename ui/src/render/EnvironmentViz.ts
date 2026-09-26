@@ -8,12 +8,12 @@ import {
 import { clamp } from "../math/MathUtil.ts"
 import {
   swellCrestAlong,
-  swellCrestIndexMid,
   swellPhaseTimeFromTravel,
   swellWavelength,
 } from "./environmentField.ts"
 import { drawFlowArrow } from "./flowArrow.ts"
 import { forEachFlowMarker, viewExtents } from "./flowMarkers.ts"
+import { flowAlignedReach } from "./worldViewBounds.ts"
 import { WindViz } from "./WindViz.ts"
 
 /**
@@ -112,7 +112,7 @@ export class EnvironmentViz {
     height: number,
   ): void {
     const c = this.ctx
-    const { halfW, halfH } = this.viewExtents(ctx)
+    const view = this.viewExtents(ctx)
     const ux = flow.vx / flow.speed
     const uy = flow.vy / flow.speed
     const px = -uy
@@ -120,9 +120,19 @@ export class EnvironmentViz {
 
     const k = (Math.PI * 2) / wavelength
     const omega = (Math.PI * 2) / period
-    const reach = Math.hypot(halfW, halfH) + wavelength + amp
-    const crestSteps = Math.ceil((reach * 2) / wavelength) + 3
-    const iMid = swellCrestIndexMid(travel, wavelength)
+    const { crossReach, alongMin, alongMax } = flowAlignedReach(
+      {
+        minX: view.worldCenterX - view.halfW,
+        maxX: view.worldCenterX + view.halfW,
+        minY: view.worldCenterY - view.halfH,
+        maxY: view.worldCenterY + view.halfH,
+      },
+      ux,
+      uy,
+    )
+    const reach = crossReach + wavelength + amp
+    const iMin = Math.floor((alongMin - travel) / wavelength) - 2
+    const iMax = Math.ceil((alongMax - travel) / wavelength) + 2
     const phase = omega * swellPhaseTimeFromTravel(travel, flow.speed)
 
     const lineW = (0.75 + height * 0.4) / this.pixelsPerMeter
@@ -132,7 +142,7 @@ export class EnvironmentViz {
     c.lineCap = "round"
     c.lineJoin = "round"
 
-    for (let i = iMid - crestSteps; i <= iMid + crestSteps; i++) {
+    for (let i = iMin; i <= iMax; i++) {
       const along0 = swellCrestAlong(i, wavelength, travel)
       const crestPhase = i * 0.85
       const pts: { x: number; y: number }[] = []
@@ -185,7 +195,7 @@ export class EnvironmentViz {
       len,
       0x63,
       (cx, cy, ux, uy, scale) => {
-        drawFlowArrow(c, this.pixelsPerMeter, cx, cy, -uy, ux, len * scale)
+        drawFlowArrow(c, this.pixelsPerMeter, cx, cy, ux, uy, len * scale)
       },
     )
 
