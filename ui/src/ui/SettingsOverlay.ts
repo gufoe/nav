@@ -45,8 +45,8 @@ export class SettingsOverlay {
       <div class="settings-overlay__backdrop" data-action="close"></div>
       <div class="settings-overlay__panel">
         <header class="settings-overlay__header">
-          <h2 class="settings-overlay__title" id="settings-title">Settings</h2>
-          <button class="settings-overlay__close btn" type="button" data-action="close" aria-label="Close settings">
+          <h2 class="settings-overlay__title" id="settings-title">Choose your boat</h2>
+          <button class="settings-overlay__close btn" type="button" data-action="close" aria-label="Close">
             Done
           </button>
         </header>
