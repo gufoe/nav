@@ -28,6 +28,7 @@ export class Game {
   private rafId = 0
   private lastTimestamp = 0
   private readonly maxFixedSteps: number
+  private resizeObserver: ResizeObserver | null = null
 
   private readonly onResize = (): void => {
     this.resize()
@@ -59,6 +60,10 @@ export class Game {
     this.running = true
     this.input.attach()
     window.addEventListener("resize", this.onResize)
+    if (typeof ResizeObserver !== "undefined") {
+      this.resizeObserver = new ResizeObserver(this.onResize)
+      this.resizeObserver.observe(this.canvas.parentElement ?? this.canvas)
+    }
     this.resize()
     this.setScene(initialScene)
     this.lastTimestamp = performance.now()
@@ -70,6 +75,8 @@ export class Game {
     this.running = false
     cancelAnimationFrame(this.rafId)
     window.removeEventListener("resize", this.onResize)
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
     this.input.detach()
     this.helpOverlay.destroy()
     this.scene?.exit?.()

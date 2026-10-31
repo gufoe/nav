@@ -29,6 +29,14 @@ body {
   background: #0b1c28;
 }
 
+@supports (height: 100dvh) {
+  html,
+  body,
+  #app {
+    height: 100dvh;
+  }
+}
+
 #ui {
   position: absolute;
   inset: 0;
